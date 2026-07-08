@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import type { SiteProfile } from "@/lib/portfolio-data";
-import type { Achievement, Experience, Project, SkillCategory } from "@/types";
+import type { Achievement, Certification, Experience, Project, SkillCategory } from "@/types";
 
 type TerminalLine = {
   type: "system" | "command" | "output" | "error";
@@ -17,6 +17,7 @@ type InteractiveTerminalProps = {
   skillCategories: SkillCategory[];
   experiences: Experience[];
   achievements: Achievement[];
+  certifications: Certification[];
   links: {
     personalGithub: string;
     sphrGithub: string;
@@ -82,6 +83,7 @@ export function InteractiveTerminal({
   skillCategories,
   experiences,
   achievements,
+  certifications,
   links
 }: InteractiveTerminalProps) {
   const [lines, setLines] = useState<TerminalLine[]>(initialLines);
@@ -369,6 +371,7 @@ export function InteractiveTerminal({
         skillCategories={skillCategories}
         experiences={experiences}
         achievements={achievements}
+        certifications={certifications}
         adminPassword={adminSessionPassword}
       />
     </>

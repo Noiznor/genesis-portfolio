@@ -27,6 +27,7 @@ export default async function Home() {
           skillCategories={portfolioData.skillCategories}
           experiences={portfolioData.experiences}
           achievements={portfolioData.achievements}
+          certifications={portfolioData.certifications}
         />
         <About siteProfile={portfolioData.siteProfile} />
         <Skills skillCategories={portfolioData.skillCategories} />

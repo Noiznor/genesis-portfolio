@@ -4,7 +4,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { SiteProfile } from "@/lib/portfolio-data";
-import type { Achievement, Experience, Project, SkillCategory } from "@/types";
+import type { Achievement, Certification, Experience, Project, SkillCategory } from "@/types";
 
 type AdminPanelProps = {
   isOpen: boolean;
@@ -14,11 +14,12 @@ type AdminPanelProps = {
   skillCategories: SkillCategory[];
   experiences: Experience[];
   achievements: Achievement[];
+  certifications: Certification[];
   adminPassword: string;
 };
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
-type ActiveTab = "site" | "projects" | "skills" | "experiences" | "achievements";
+type ActiveTab = "site" | "projects" | "skills" | "experiences" | "achievements" | "certifications";
 
 type ProjectFormData = {
   slug: string;
@@ -64,6 +65,18 @@ type AchievementFormData = {
   sortOrder: number;
 };
 
+type CertificationFormData = {
+  slug: string;
+  title: string;
+  issuer: string;
+  issueDate: string;
+  credentialId: string;
+  credentialUrl: string;
+  certificateImageUrl: string;
+  description: string;
+  sortOrder: number;
+};
+
 const emptyProjectForm: ProjectFormData = {
   slug: "",
   title: "",
@@ -104,6 +117,18 @@ const emptyExperienceForm: ExperienceFormData = {
 const emptyAchievementForm: AchievementFormData = {
   slug: "",
   title: "",
+  description: "",
+  sortOrder: 1
+};
+
+const emptyCertificationForm: CertificationFormData = {
+  slug: "",
+  title: "",
+  issuer: "",
+  issueDate: "",
+  credentialId: "",
+  credentialUrl: "",
+  certificateImageUrl: "",
   description: "",
   sortOrder: 1
 };
@@ -194,6 +219,23 @@ function mapAchievementToForm(
   };
 }
 
+function mapCertificationToForm(
+  certification: Certification,
+  index: number
+): CertificationFormData {
+  return {
+    slug: certification.id,
+    title: certification.title,
+    issuer: certification.issuer,
+    issueDate: certification.issueDate ?? "",
+    credentialId: certification.credentialId ?? "",
+    credentialUrl: certification.credentialUrl ?? "",
+    certificateImageUrl: certification.certificateImageUrl ?? "",
+    description: certification.description,
+    sortOrder: index + 1
+  };
+}
+
 export function AdminPanel({
   isOpen,
   onClose,
@@ -202,6 +244,7 @@ export function AdminPanel({
   skillCategories,
   experiences,
   achievements,
+  certifications,
   adminPassword
 }: AdminPanelProps) {
   const router = useRouter();
@@ -235,6 +278,14 @@ export function AdminPanel({
     [achievements]
   );
 
+  const certificationForms = useMemo(
+    () =>
+      certifications.map((certification, index) =>
+        mapCertificationToForm(certification, index)
+      ),
+    [certifications]
+  );
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("site");
   const [siteFormData, setSiteFormData] = useState<SiteProfile>(siteProfile);
 
@@ -255,6 +306,10 @@ export function AdminPanel({
   const [achievementFormData, setAchievementFormData] =
     useState<AchievementFormData>(emptyAchievementForm);
 
+  const [selectedCertificationIndex, setSelectedCertificationIndex] = useState(0);
+  const [certificationFormData, setCertificationFormData] =
+    useState<CertificationFormData>(emptyCertificationForm);
+
   const [siteSaveStatus, setSiteSaveStatus] = useState<SaveStatus>("idle");
   const [siteStatusMessage, setSiteStatusMessage] = useState("");
 
@@ -272,6 +327,11 @@ export function AdminPanel({
   const [achievementSaveStatus, setAchievementSaveStatus] =
     useState<SaveStatus>("idle");
   const [achievementStatusMessage, setAchievementStatusMessage] = useState("");
+
+  const [certificationSaveStatus, setCertificationSaveStatus] =
+    useState<SaveStatus>("idle");
+  const [certificationStatusMessage, setCertificationStatusMessage] =
+    useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -292,6 +352,9 @@ export function AdminPanel({
       setSelectedAchievementIndex(0);
       setAchievementFormData(achievementForms[0] ?? emptyAchievementForm);
 
+      setSelectedCertificationIndex(0);
+      setCertificationFormData(certificationForms[0] ?? emptyCertificationForm);
+
       setSiteSaveStatus("idle");
       setSiteStatusMessage("");
       setProjectSaveStatus("idle");
@@ -302,6 +365,8 @@ export function AdminPanel({
       setExperienceStatusMessage("");
       setAchievementSaveStatus("idle");
       setAchievementStatusMessage("");
+      setCertificationSaveStatus("idle");
+      setCertificationStatusMessage("");
     }
   }, [
     isOpen,
@@ -341,6 +406,14 @@ export function AdminPanel({
     setAchievementSaveStatus("idle");
     setAchievementStatusMessage("");
   }, [selectedAchievementIndex, achievementForms]);
+
+  useEffect(() => {
+    setCertificationFormData(
+      certificationForms[selectedCertificationIndex] ?? emptyCertificationForm
+    );
+    setCertificationSaveStatus("idle");
+    setCertificationStatusMessage("");
+  }, [selectedCertificationIndex, certificationForms]);
 
   if (!isOpen) return null;
 
@@ -401,6 +474,19 @@ export function AdminPanel({
       field === "sortOrder" ? Number(event.target.value) : event.target.value;
 
     setAchievementFormData((current) => ({
+      ...current,
+      [field]: value
+    }));
+  }
+
+  function updateCertificationField(
+    field: keyof CertificationFormData,
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    const value =
+      field === "sortOrder" ? Number(event.target.value) : event.target.value;
+
+    setCertificationFormData((current) => ({
       ...current,
       [field]: value
     }));
@@ -642,6 +728,46 @@ export function AdminPanel({
     }
   }
 
+  async function handleCertificationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setCertificationSaveStatus("saving");
+    setCertificationStatusMessage("Saving certification to Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/certifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          certification: certificationFormData
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to save certification.");
+      }
+
+      setCertificationSaveStatus("success");
+      setCertificationStatusMessage("Certification saved successfully.");
+      router.refresh();
+    } catch (error) {
+      setCertificationSaveStatus("error");
+      setCertificationStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while saving certification."
+      );
+    }
+  }
+
   const inputClass =
     "mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20";
 
@@ -708,6 +834,10 @@ export function AdminPanel({
 
           <button type="button" onClick={() => setActiveTab("achievements")} className={tabClass("achievements")}>
             Achievements
+          </button>
+
+          <button type="button" onClick={() => setActiveTab("certifications")} className={tabClass("certifications")}>
+            Certifications
           </button>
         </div>
 
@@ -1027,7 +1157,7 @@ export function AdminPanel({
               </button>
             </div>
           </form>
-        ) : (
+        ) : activeTab === "achievements" ? (
           <form onSubmit={handleAchievementSubmit} className="space-y-8 p-6">
             <div>
               <label htmlFor="achievementSelect" className={labelClass}>Select Achievement</label>
@@ -1068,6 +1198,75 @@ export function AdminPanel({
               <p className="text-xs leading-5 text-slate-500">This tab updates one selected achievement at a time.</p>
               <button type="submit" disabled={achievementSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {achievementSaveStatus === "saving" ? "Saving..." : "Save Achievement"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleCertificationSubmit} className="space-y-8 p-6">
+            <div>
+              <label htmlFor="certificationSelect" className={labelClass}>Select Certification</label>
+              <select id="certificationSelect" value={selectedCertificationIndex} onChange={(event) => setSelectedCertificationIndex(Number(event.target.value))} className={inputClass}>
+                {certificationForms.map((certification, index) => (
+                  <option key={certification.slug} value={index}>
+                    {certification.sortOrder}. {certification.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="certificationSlug" className={labelClass}>Slug</label>
+                <input id="certificationSlug" value={certificationFormData.slug} onChange={(event) => updateCertificationField("slug", event)} className={inputClass} required />
+              </div>
+
+              <div>
+                <label htmlFor="certificationSortOrder" className={labelClass}>Sort Order</label>
+                <input id="certificationSortOrder" type="number" min={1} value={certificationFormData.sortOrder} onChange={(event) => updateCertificationField("sortOrder", event)} className={inputClass} required />
+              </div>
+
+              <div>
+                <label htmlFor="certificationTitle" className={labelClass}>Title</label>
+                <input id="certificationTitle" value={certificationFormData.title} onChange={(event) => updateCertificationField("title", event)} className={inputClass} required />
+              </div>
+
+              <div>
+                <label htmlFor="certificationIssuer" className={labelClass}>Issuer</label>
+                <input id="certificationIssuer" value={certificationFormData.issuer} onChange={(event) => updateCertificationField("issuer", event)} className={inputClass} required />
+              </div>
+
+              <div>
+                <label htmlFor="certificationIssueDate" className={labelClass}>Issue Date</label>
+                <input id="certificationIssueDate" value={certificationFormData.issueDate} onChange={(event) => updateCertificationField("issueDate", event)} placeholder="Example: 2025 or June 2025" className={inputClass} />
+              </div>
+
+              <div>
+                <label htmlFor="certificationCredentialId" className={labelClass}>Credential ID</label>
+                <input id="certificationCredentialId" value={certificationFormData.credentialId} onChange={(event) => updateCertificationField("credentialId", event)} placeholder="Optional" className={inputClass} />
+              </div>
+
+              <div>
+                <label htmlFor="certificationCredentialUrl" className={labelClass}>Credential URL</label>
+                <input id="certificationCredentialUrl" value={certificationFormData.credentialUrl} onChange={(event) => updateCertificationField("credentialUrl", event)} placeholder="Optional verification link" className={inputClass} />
+              </div>
+
+              <div>
+                <label htmlFor="certificationImageUrl" className={labelClass}>Certificate Image URL</label>
+                <input id="certificationImageUrl" value={certificationFormData.certificateImageUrl} onChange={(event) => updateCertificationField("certificateImageUrl", event)} placeholder="Optional image URL for now" className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="certificationDescription" className={labelClass}>Description</label>
+              <textarea id="certificationDescription" value={certificationFormData.description} onChange={(event) => updateCertificationField("description", event)} rows={5} className={inputClass} required />
+            </div>
+
+            {certificationStatusMessage ? <div className={statusClass(certificationSaveStatus)}>{certificationStatusMessage}</div> : null}
+
+            <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
+              <p className="text-xs leading-5 text-slate-500">This tab updates one selected certification at a time. Image upload will be added later using Supabase Storage.</p>
+              <button type="submit" disabled={certificationSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
+                {certificationSaveStatus === "saving" ? "Saving..." : "Save Certification"}
               </button>
             </div>
           </form>

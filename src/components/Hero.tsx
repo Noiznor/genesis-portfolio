@@ -2,7 +2,7 @@
 import { InteractiveTerminal } from "@/components/InteractiveTerminal";
 import { SmoothScrollLink } from "@/components/SmoothScrollLink";
 import type { SiteProfile } from "@/lib/portfolio-data";
-import type { Achievement, Experience, Project, SkillCategory } from "@/types";
+import type { Achievement, Certification, Experience, Project, SkillCategory } from "@/types";
 
 type HeroProps = {
   siteProfile: SiteProfile;
@@ -10,6 +10,7 @@ type HeroProps = {
   skillCategories: SkillCategory[];
   experiences: Experience[];
   achievements: Achievement[];
+  certifications: Certification[];
 };
 
 const techTags = [
@@ -27,7 +28,8 @@ export function Hero({
   projects,
   skillCategories,
   experiences,
-  achievements
+  achievements,
+  certifications
 }: HeroProps) {
   return (
     <section
@@ -93,6 +95,7 @@ export function Hero({
         skillCategories={skillCategories}
         experiences={experiences}
         achievements={achievements}
+        certifications={certifications}
         links={{
           personalGithub: siteProfile.personalGithub,
           sphrGithub: siteProfile.sphrGithub
