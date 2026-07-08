@@ -1,6 +1,7 @@
 ﻿import { About } from "@/components/About";
 import { Achievements } from "@/components/Achievements";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { Certifications } from "@/components/Certifications";
 import { Contact } from "@/components/Contact";
 import { Experience } from "@/components/Experience";
 import { Footer } from "@/components/Footer";
@@ -32,6 +33,7 @@ export default async function Home() {
         <Projects projects={portfolioData.projects} />
         <Experience experiences={portfolioData.experiences} />
         <Achievements achievements={portfolioData.achievements} />
+        <Certifications certifications={portfolioData.certifications} />
         <ResumeCTA siteProfile={portfolioData.siteProfile} />
         <Contact siteProfile={portfolioData.siteProfile} />
         <Footer siteProfile={portfolioData.siteProfile} />

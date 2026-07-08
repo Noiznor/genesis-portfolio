@@ -1,10 +1,17 @@
 ﻿import { achievements as fallbackAchievements } from "@/data/achievements";
+import { certifications as fallbackCertifications } from "@/data/certifications";
 import { experiences as fallbackExperiences } from "@/data/experience";
 import { projects as fallbackProjects } from "@/data/projects";
 import { siteConfig as fallbackSiteConfig } from "@/data/site";
 import { skillCategories as fallbackSkillCategories } from "@/data/skills";
 import { createClient } from "@/lib/supabase/server";
-import type { Achievement, Experience, Project, SkillCategory } from "@/types";
+import type {
+  Achievement,
+  Certification,
+  Experience,
+  Project,
+  SkillCategory
+} from "@/types";
 
 export type SiteProfile = {
   ownerName: string;
@@ -29,6 +36,7 @@ export type PortfolioData = {
   skillCategories: SkillCategory[];
   experiences: Experience[];
   achievements: Achievement[];
+  certifications: Certification[];
 };
 
 type SupabaseSiteProfile = {
@@ -91,6 +99,18 @@ type SupabaseAchievement = {
   sort_order: number;
 };
 
+type SupabaseCertification = {
+  slug: string;
+  title: string;
+  issuer: string;
+  issue_date: string | null;
+  credential_id: string | null;
+  credential_url: string | null;
+  certificate_image_url: string | null;
+  description: string;
+  sort_order: number;
+};
+
 const fallbackSiteProfile: SiteProfile = {
   ownerName: fallbackSiteConfig.name,
   heroEyebrow: "Cybersecurity • Embedded Systems • AI Edge Intelligence",
@@ -130,6 +150,8 @@ function mapSiteProfile(profile: SupabaseSiteProfile): SiteProfile {
 }
 
 function mapProject(project: SupabaseProject): Project {
+  const documentationUrl = project.documentation_url?.trim();
+
   return {
     id: project.slug,
     title: project.title,
@@ -146,12 +168,15 @@ function mapProject(project: SupabaseProject): Project {
     links: [
       {
         label: "GitHub",
-        href: project.github_url || fallbackSiteConfig.sphrGithub
+        href: project.github_url
       },
       {
         label: "Documentation",
-        href: project.documentation_url || "#",
-        isPlaceholder: !project.documentation_url
+        href:
+          documentationUrl && documentationUrl.length > 0
+            ? documentationUrl
+            : "#",
+        isPlaceholder: !documentationUrl || documentationUrl.length === 0
       }
     ]
   };
@@ -186,6 +211,19 @@ function mapAchievement(achievement: SupabaseAchievement): Achievement {
   };
 }
 
+function mapCertification(certification: SupabaseCertification): Certification {
+  return {
+    id: certification.slug,
+    title: certification.title,
+    issuer: certification.issuer,
+    issueDate: certification.issue_date ?? undefined,
+    credentialId: certification.credential_id ?? undefined,
+    credentialUrl: certification.credential_url ?? undefined,
+    certificateImageUrl: certification.certificate_image_url ?? undefined,
+    description: certification.description
+  };
+}
+
 export async function getPortfolioData(): Promise<PortfolioData> {
   try {
     const supabase = await createClient();
@@ -195,7 +233,8 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       projectsResponse,
       skillsResponse,
       experiencesResponse,
-      achievementsResponse
+      achievementsResponse,
+      certificationsResponse
     ] = await Promise.all([
       supabase
         .from("site_profile")
@@ -216,11 +255,19 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         .order("sort_order", { ascending: true }),
       supabase
         .from("experiences")
-        .select("slug,title,organization,location,period,description,highlights,sort_order")
+        .select(
+          "slug,title,organization,location,period,description,highlights,sort_order"
+        )
         .order("sort_order", { ascending: true }),
       supabase
         .from("achievements")
         .select("slug,title,description,sort_order")
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("certifications")
+        .select(
+          "slug,title,issuer,issue_date,credential_id,credential_url,certificate_image_url,description,sort_order"
+        )
         .order("sort_order", { ascending: true })
     ]);
 
@@ -229,7 +276,8 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       projectsResponse.error ||
       skillsResponse.error ||
       experiencesResponse.error ||
-      achievementsResponse.error
+      achievementsResponse.error ||
+      certificationsResponse.error
     ) {
       throw new Error("Failed to load one or more Supabase portfolio tables.");
     }
@@ -250,10 +298,21 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         sphrGithub: siteProfile.sphrGithub,
         linkedin: siteProfile.linkedin
       },
-      projects: ((projectsResponse.data ?? []) as SupabaseProject[]).map(mapProject),
-      skillCategories: ((skillsResponse.data ?? []) as SupabaseSkillCategory[]).map(mapSkillCategory),
-      experiences: ((experiencesResponse.data ?? []) as SupabaseExperience[]).map(mapExperience),
-      achievements: ((achievementsResponse.data ?? []) as SupabaseAchievement[]).map(mapAchievement)
+      projects: ((projectsResponse.data ?? []) as SupabaseProject[]).map(
+        mapProject
+      ),
+      skillCategories: (
+        (skillsResponse.data ?? []) as SupabaseSkillCategory[]
+      ).map(mapSkillCategory),
+      experiences: (
+        (experiencesResponse.data ?? []) as SupabaseExperience[]
+      ).map(mapExperience),
+      achievements: (
+        (achievementsResponse.data ?? []) as SupabaseAchievement[]
+      ).map(mapAchievement),
+      certifications: (
+        (certificationsResponse.data ?? []) as SupabaseCertification[]
+      ).map(mapCertification)
     };
   } catch {
     return {
@@ -262,7 +321,8 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       projects: fallbackProjects,
       skillCategories: fallbackSkillCategories,
       experiences: fallbackExperiences,
-      achievements: fallbackAchievements
+      achievements: fallbackAchievements,
+      certifications: fallbackCertifications
     };
   }
 }

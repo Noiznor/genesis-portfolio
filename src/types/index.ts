@@ -47,6 +47,17 @@ export interface Achievement {
   description: string;
 }
 
+export interface Certification {
+  id: string;
+  title: string;
+  issuer: string;
+  issueDate?: string;
+  credentialId?: string;
+  credentialUrl?: string;
+  certificateImageUrl?: string;
+  description: string;
+}
+
 export interface NavItem {
   label: string;
   href: string;
