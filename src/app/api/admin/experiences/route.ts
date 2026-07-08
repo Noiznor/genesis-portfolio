@@ -12,9 +12,14 @@ type ExperiencePayload = {
   sortOrder: number;
 };
 
-type RequestBody = {
+type SaveRequestBody = {
   password?: string;
   experience?: Partial<ExperiencePayload>;
+};
+
+type DeleteRequestBody = {
+  password?: string;
+  slug?: string;
 };
 
 function isNonEmptyString(value: unknown): value is string {
@@ -25,30 +30,52 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
-function isNonEmptyStringArray(value: unknown): value is string[] {
+function isStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) &&
-    value.length > 0 &&
-    value.every((item) => typeof item === "string" && item.trim().length > 0)
+    value.every((item) => typeof item === "string")
   );
+}
+
+function getAdminConfig() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!supabaseUrl || !serviceRoleKey || !adminPassword) {
+    return null;
+  }
+
+  return {
+    supabaseUrl,
+    serviceRoleKey,
+    adminPassword
+  };
+}
+
+function createAdminSupabaseClient(supabaseUrl: string, serviceRoleKey: string) {
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
 }
 
 export async function POST(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const config = getAdminConfig();
 
-    if (!supabaseUrl || !serviceRoleKey || !adminPassword) {
+    if (!config) {
       return NextResponse.json(
         { error: "Server admin environment variables are not configured." },
         { status: 500 }
       );
     }
 
-    const body = (await request.json()) as RequestBody;
+    const body = (await request.json()) as SaveRequestBody;
 
-    if (!body.password || body.password !== adminPassword) {
+    if (!body.password || body.password !== config.adminPassword) {
       return NextResponse.json(
         { error: "Unauthorized admin request." },
         { status: 401 }
@@ -117,9 +144,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isNonEmptyStringArray(highlights)) {
+    if (!isStringArray(highlights)) {
       return NextResponse.json(
-        { error: "Missing or invalid array field: highlights" },
+        { error: "Missing or invalid field: highlights" },
         { status: 400 }
       );
     }
@@ -131,12 +158,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
-      }
-    });
+    const supabase = createAdminSupabaseClient(
+      config.supabaseUrl,
+      config.serviceRoleKey
+    );
 
     const { error } = await supabase
       .from("experiences")
@@ -148,7 +173,7 @@ export async function POST(request: Request) {
           location: location.trim().length > 0 ? location.trim() : null,
           period: period.trim().length > 0 ? period.trim() : null,
           description: description.trim(),
-          highlights: highlights.map((highlight) => highlight.trim()),
+          highlights: highlights.map((highlight) => highlight.trim()).filter(Boolean),
           sort_order: sortOrder
         },
         {
@@ -166,6 +191,58 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Unexpected server error while updating experience." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const config = getAdminConfig();
+
+    if (!config) {
+      return NextResponse.json(
+        { error: "Server admin environment variables are not configured." },
+        { status: 500 }
+      );
+    }
+
+    const body = (await request.json()) as DeleteRequestBody;
+
+    if (!body.password || body.password !== config.adminPassword) {
+      return NextResponse.json(
+        { error: "Unauthorized admin request." },
+        { status: 401 }
+      );
+    }
+
+    if (!isNonEmptyString(body.slug)) {
+      return NextResponse.json(
+        { error: "Missing or invalid experience slug." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createAdminSupabaseClient(
+      config.supabaseUrl,
+      config.serviceRoleKey
+    );
+
+    const { error } = await supabase
+      .from("experiences")
+      .delete()
+      .eq("slug", body.slug.trim());
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      message: "Experience deleted successfully."
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Unexpected server error while deleting experience." },
       { status: 500 }
     );
   }

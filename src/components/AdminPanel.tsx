@@ -784,6 +784,79 @@ export function AdminPanel({
     }
   }
 
+  function createExperienceDraft() {
+    setExperienceFormData({
+      ...emptyExperienceForm,
+      slug: `new-experience-${Date.now()}`,
+      title: "New Experience",
+      organization: "Organization Name",
+      location: "",
+      period: "",
+      description: "Write the experience description here.",
+      highlightsText: "First experience highlight\nSecond experience highlight",
+      sortOrder: experienceForms.length + 1
+    });
+
+    setExperienceSaveStatus("success");
+    setExperienceStatusMessage(
+      "New experience draft created. Fill in the details, then click Save Experience."
+    );
+  }
+
+  async function handleExperienceDelete() {
+    const slug = experienceFormData.slug.trim();
+
+    if (!slug) {
+      setExperienceSaveStatus("error");
+      setExperienceStatusMessage("Cannot delete an experience without a slug.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete experience "${experienceFormData.title || slug}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setExperienceSaveStatus("saving");
+    setExperienceStatusMessage("Deleting experience from Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/experiences", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          slug
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete experience.");
+      }
+
+      setSelectedExperienceIndex(0);
+      setExperienceFormData(experienceForms[0] ?? emptyExperienceForm);
+      setExperienceSaveStatus("success");
+      setExperienceStatusMessage("Experience deleted successfully.");
+      router.refresh();
+    } catch (error) {
+      setExperienceSaveStatus("error");
+      setExperienceStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting experience."
+      );
+    }
+  }
+
   async function handleExperienceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1339,15 +1412,25 @@ export function AdminPanel({
           </form>
         ) : activeTab === "experiences" ? (
           <form onSubmit={handleExperienceSubmit} className="space-y-8 p-6">
-            <div>
-              <label htmlFor="experienceSelect" className={labelClass}>Select Experience</label>
-              <select id="experienceSelect" value={selectedExperienceIndex} onChange={(event) => setSelectedExperienceIndex(Number(event.target.value))} className={inputClass}>
-                {experienceForms.map((experience, index) => (
-                  <option key={experience.slug} value={index}>
-                    {experience.sortOrder}. {experience.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+              <div>
+                <label htmlFor="experienceSelect" className={labelClass}>Select Experience</label>
+                <select id="experienceSelect" value={selectedExperienceIndex} onChange={(event) => setSelectedExperienceIndex(Number(event.target.value))} className={inputClass}>
+                  {experienceForms.map((experience, index) => (
+                    <option key={experience.slug} value={index}>
+                      {experience.sortOrder}. {experience.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={createExperienceDraft} className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-5 py-3 text-sm font-bold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/10">
+                New Experience
+              </button>
+
+              <button type="button" onClick={handleExperienceDelete} disabled={experienceSaveStatus === "saving" || experienceFormData.slug.trim().length === 0} className="rounded-xl border border-red-400/30 bg-red-400/5 px-5 py-3 text-sm font-bold text-red-200 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Delete Selected
+              </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1395,7 +1478,7 @@ export function AdminPanel({
             {experienceStatusMessage ? <div className={statusClass(experienceSaveStatus)}>{experienceStatusMessage}</div> : null}
 
             <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-slate-500">This tab updates one selected experience at a time.</p>
+              <p className="text-xs leading-5 text-slate-500">This tab can create, update, and delete experiences.</p>
               <button type="submit" disabled={experienceSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {experienceSaveStatus === "saving" ? "Saving..." : "Save Experience"}
               </button>
