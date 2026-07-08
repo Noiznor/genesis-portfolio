@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { InteractiveTerminal } from "@/components/InteractiveTerminal";
+import { SmoothScrollLink } from "@/components/SmoothScrollLink";
 import type { SiteProfile } from "@/lib/portfolio-data";
 import type { Achievement, Experience, Project, SkillCategory } from "@/types";
 
@@ -51,12 +52,12 @@ export function Hero({
         </p>
 
         <div className="mt-9 flex flex-wrap gap-4">
-          <Link
+          <SmoothScrollLink
             href="#projects"
             className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:bg-emerald-300"
           >
             View Projects →
-          </Link>
+          </SmoothScrollLink>
 
           <Link
             href={siteProfile.resumePath}
@@ -65,12 +66,12 @@ export function Hero({
             Download Resume ↓
           </Link>
 
-          <Link
+          <SmoothScrollLink
             href="#contact"
             className="rounded-xl px-6 py-3 text-sm font-bold text-slate-300 transition hover:text-emerald-200"
           >
             Contact Me ✉
-          </Link>
+          </SmoothScrollLink>
         </div>
 
         <div className="mt-10 flex max-w-2xl flex-wrap gap-3">

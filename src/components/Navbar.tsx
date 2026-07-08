@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { navItems } from "@/data/site";
+import { SmoothScrollLink } from "@/components/SmoothScrollLink";
 import type { siteConfig as siteConfigType } from "@/data/site";
 
 type NavbarProps = {
@@ -22,22 +23,22 @@ export function Navbar({ siteConfig }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-emerald-400/10 bg-[#020403]/85 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link
+        <SmoothScrollLink
           href="#home"
           className="font-mono text-sm font-bold tracking-wide text-emerald-100 transition hover:text-emerald-300"
         >
           {siteConfig.name}
-        </Link>
+        </SmoothScrollLink>
 
         <div className="hidden items-center gap-6 text-sm font-medium text-slate-300 md:flex">
           {navItems.map((item) => (
-            <Link
+            <SmoothScrollLink
               key={item.href}
-              href={item.href}
+              href={item.href as `#${string}`}
               className="transition hover:text-emerald-300"
             >
               {item.label}
-            </Link>
+            </SmoothScrollLink>
           ))}
         </div>
 
