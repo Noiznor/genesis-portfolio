@@ -728,6 +728,80 @@ export function AdminPanel({
     }
   }
 
+  function createCertificationDraft() {
+    setCertificationFormData({
+      ...emptyCertificationForm,
+      slug: `new-certification-${Date.now()}`,
+      title: "New Certification",
+      issuer: "",
+      issueDate: "",
+      credentialId: "",
+      credentialUrl: "",
+      certificateImageUrl: "",
+      description: "Write the certification description here.",
+      sortOrder: certificationForms.length + 1
+    });
+
+    setCertificationSaveStatus("success");
+    setCertificationStatusMessage(
+      "New certification draft created. Fill in the details, then click Save Certification."
+    );
+  }
+
+  async function handleCertificationDelete() {
+    const slug = certificationFormData.slug.trim();
+
+    if (!slug) {
+      setCertificationSaveStatus("error");
+      setCertificationStatusMessage("Cannot delete a certification without a slug.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete certification "${certificationFormData.title || slug}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setCertificationSaveStatus("saving");
+    setCertificationStatusMessage("Deleting certification from Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/certifications", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          slug
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete certification.");
+      }
+
+      setSelectedCertificationIndex(0);
+      setCertificationFormData(certificationForms[0] ?? emptyCertificationForm);
+      setCertificationSaveStatus("success");
+      setCertificationStatusMessage("Certification deleted successfully.");
+      router.refresh();
+    } catch (error) {
+      setCertificationSaveStatus("error");
+      setCertificationStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting certification."
+      );
+    }
+  }
+
   async function handleCertificationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1203,15 +1277,25 @@ export function AdminPanel({
           </form>
         ) : (
           <form onSubmit={handleCertificationSubmit} className="space-y-8 p-6">
-            <div>
-              <label htmlFor="certificationSelect" className={labelClass}>Select Certification</label>
-              <select id="certificationSelect" value={selectedCertificationIndex} onChange={(event) => setSelectedCertificationIndex(Number(event.target.value))} className={inputClass}>
-                {certificationForms.map((certification, index) => (
-                  <option key={certification.slug} value={index}>
-                    {certification.sortOrder}. {certification.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+              <div>
+                <label htmlFor="certificationSelect" className={labelClass}>Select Certification</label>
+                <select id="certificationSelect" value={selectedCertificationIndex} onChange={(event) => setSelectedCertificationIndex(Number(event.target.value))} className={inputClass}>
+                  {certificationForms.map((certification, index) => (
+                    <option key={certification.slug} value={index}>
+                      {certification.sortOrder}. {certification.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={createCertificationDraft} className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-5 py-3 text-sm font-bold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/10">
+                New Certification
+              </button>
+
+              <button type="button" onClick={handleCertificationDelete} disabled={certificationSaveStatus === "saving" || certificationFormData.slug.trim().length === 0} className="rounded-xl border border-red-400/30 bg-red-400/5 px-5 py-3 text-sm font-bold text-red-200 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Delete Selected
+              </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1264,7 +1348,7 @@ export function AdminPanel({
             {certificationStatusMessage ? <div className={statusClass(certificationSaveStatus)}>{certificationStatusMessage}</div> : null}
 
             <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-slate-500">This tab updates one selected certification at a time. Image upload will be added later using Supabase Storage.</p>
+              <p className="text-xs leading-5 text-slate-500">This tab can create, update, and delete certifications. Image upload will be added later using Supabase Storage.</p>
               <button type="submit" disabled={certificationSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {certificationSaveStatus === "saving" ? "Saving..." : "Save Certification"}
               </button>

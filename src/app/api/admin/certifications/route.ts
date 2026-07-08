@@ -13,9 +13,14 @@ type CertificationPayload = {
   sortOrder: number;
 };
 
-type RequestBody = {
+type SaveRequestBody = {
   password?: string;
   certification?: Partial<CertificationPayload>;
+};
+
+type DeleteRequestBody = {
+  password?: string;
+  slug?: string;
 };
 
 function isNonEmptyString(value: unknown): value is string {
@@ -26,22 +31,45 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
+function getAdminConfig() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!supabaseUrl || !serviceRoleKey || !adminPassword) {
+    return null;
+  }
+
+  return {
+    supabaseUrl,
+    serviceRoleKey,
+    adminPassword
+  };
+}
+
+function createAdminSupabaseClient(supabaseUrl: string, serviceRoleKey: string) {
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
+
 export async function POST(request: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const config = getAdminConfig();
 
-    if (!supabaseUrl || !serviceRoleKey || !adminPassword) {
+    if (!config) {
       return NextResponse.json(
         { error: "Server admin environment variables are not configured." },
         { status: 500 }
       );
     }
 
-    const body = (await request.json()) as RequestBody;
+    const body = (await request.json()) as SaveRequestBody;
 
-    if (!body.password || body.password !== adminPassword) {
+    if (!body.password || body.password !== config.adminPassword) {
       return NextResponse.json(
         { error: "Unauthorized admin request." },
         { status: 401 }
@@ -132,12 +160,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
-      }
-    });
+    const supabase = createAdminSupabaseClient(
+      config.supabaseUrl,
+      config.serviceRoleKey
+    );
 
     const { error } = await supabase
       .from("certifications")
@@ -173,6 +199,58 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Unexpected server error while updating certification." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const config = getAdminConfig();
+
+    if (!config) {
+      return NextResponse.json(
+        { error: "Server admin environment variables are not configured." },
+        { status: 500 }
+      );
+    }
+
+    const body = (await request.json()) as DeleteRequestBody;
+
+    if (!body.password || body.password !== config.adminPassword) {
+      return NextResponse.json(
+        { error: "Unauthorized admin request." },
+        { status: 401 }
+      );
+    }
+
+    if (!isNonEmptyString(body.slug)) {
+      return NextResponse.json(
+        { error: "Missing or invalid certification slug." },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createAdminSupabaseClient(
+      config.supabaseUrl,
+      config.serviceRoleKey
+    );
+
+    const { error } = await supabase
+      .from("certifications")
+      .delete()
+      .eq("slug", body.slug.trim());
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      message: "Certification deleted successfully."
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Unexpected server error while deleting certification." },
       { status: 500 }
     );
   }
