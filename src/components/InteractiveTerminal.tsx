@@ -23,8 +23,6 @@ type InteractiveTerminalProps = {
   };
 };
 
-const adminDemoPassword = process.env.NEXT_PUBLIC_ADMIN_DEMO_PASSWORD;
-
 const initialLines: TerminalLine[] = [
   { type: "system", text: "initializing portfolio..." },
   { type: "system", text: "loading CAN/AGL projects..." },
@@ -91,6 +89,8 @@ export function InteractiveTerminal({
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isWaitingForAdminPassword, setIsWaitingForAdminPassword] =
     useState(false);
+  const [isVerifyingAdminPassword, setIsVerifyingAdminPassword] =
+    useState(false);
   const [adminSessionPassword, setAdminSessionPassword] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,28 +106,38 @@ export function InteractiveTerminal({
     setLines((current) => [...current, ...newLines]);
   }
 
-  function handleAdminPasswordAttempt(rawPassword: string) {
+  async function handleAdminPasswordAttempt(rawPassword: string) {
     const maskedCommandLine: TerminalLine = {
       type: "command",
       text: "$ ********"
     };
 
-    if (!adminDemoPassword) {
-      setIsWaitingForAdminPassword(false);
-      addLines([
-        maskedCommandLine,
-        {
-          type: "error",
-          text: "admin password is not configured. add NEXT_PUBLIC_ADMIN_DEMO_PASSWORD to .env.local, then restart npm run dev."
-        }
-      ]);
-      return;
-    }
+    setIsVerifyingAdminPassword(true);
 
-    if (rawPassword === adminDemoPassword) {
+    try {
+      const response = await fetch("/api/admin/verify-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: rawPassword
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Invalid admin password.");
+      }
+
       setIsWaitingForAdminPassword(false);
       setAdminSessionPassword(rawPassword);
       setIsAdminPanelOpen(true);
+
       addLines([
         maskedCommandLine,
         {
@@ -136,27 +146,32 @@ export function InteractiveTerminal({
         },
         {
           type: "output",
-          text: "security note: this is a temporary demo gate. production admin security should use Supabase Auth."
+          text: "admin password verified server-side using ADMIN_PASSWORD."
         }
       ]);
-      return;
-    }
+    } catch (error) {
+      setIsWaitingForAdminPassword(false);
 
-    setIsWaitingForAdminPassword(false);
-    addLines([
-      maskedCommandLine,
-      {
-        type: "error",
-        text: "access denied. incorrect password."
-      }
-    ]);
+      addLines([
+        maskedCommandLine,
+        {
+          type: "error",
+          text:
+            error instanceof Error
+              ? `access denied. ${error.message}`
+              : "access denied. unexpected password verification error."
+        }
+      ]);
+    } finally {
+      setIsVerifyingAdminPassword(false);
+    }
   }
 
   function runCommand(rawCommand: string) {
     const command = rawCommand.trim().toLowerCase();
 
     if (isWaitingForAdminPassword) {
-      handleAdminPasswordAttempt(rawCommand.trim());
+      void handleAdminPasswordAttempt(rawCommand.trim());
       return;
     }
 
@@ -286,6 +301,9 @@ export function InteractiveTerminal({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isVerifyingAdminPassword) return;
+
     runCommand(input);
     setInput("");
   }
@@ -327,14 +345,17 @@ export function InteractiveTerminal({
                   : "Interactive portfolio terminal command input"
               }
               type={isWaitingForAdminPassword ? "password" : "text"}
-              className="w-full bg-transparent text-emerald-300 outline-none placeholder:text-slate-600"
+              className="w-full bg-transparent text-emerald-300 outline-none placeholder:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
               placeholder={
-                isWaitingForAdminPassword
-                  ? "enter password..."
-                  : "type a command..."
+                isVerifyingAdminPassword
+                  ? "verifying..."
+                  : isWaitingForAdminPassword
+                    ? "enter password..."
+                    : "type a command..."
               }
               autoComplete="off"
               spellCheck={false}
+              disabled={isVerifyingAdminPassword}
             />
           </form>
         </div>
@@ -353,5 +374,3 @@ export function InteractiveTerminal({
     </>
   );
 }
-
-
