@@ -532,6 +532,86 @@ export function AdminPanel({
     }
   }
 
+  function createProjectDraft() {
+    setProjectFormData({
+      ...emptyProjectForm,
+      slug: `new-project-${Date.now()}`,
+      title: "New Project",
+      category: "Project Category",
+      description: "Short project description.",
+      highlightsText: "First project highlight\nSecond project highlight",
+      techStackText: "Next.js\nTypeScript\nSupabase",
+      overview: "Write the full project overview here.",
+      problemSolved: "Describe the problem this project solves.",
+      role: "Describe Genesis' role in this project.",
+      toolsUsedText: "Tool 1\nTool 2\nTool 3",
+      technicalWorkText: "Technical work item 1\nTechnical work item 2",
+      result: "Describe the project result or outcome.",
+      githubUrl: "",
+      documentationUrl: "",
+      sortOrder: projectForms.length + 1
+    });
+
+    setProjectSaveStatus("success");
+    setProjectStatusMessage(
+      "New project draft created. Fill in the details, then click Save Selected Project."
+    );
+  }
+
+  async function handleProjectDelete() {
+    const slug = projectFormData.slug.trim();
+
+    if (!slug) {
+      setProjectSaveStatus("error");
+      setProjectStatusMessage("Cannot delete a project without a slug.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete project "${projectFormData.title || slug}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setProjectSaveStatus("saving");
+    setProjectStatusMessage("Deleting project from Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/projects", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          slug
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete project.");
+      }
+
+      setSelectedProjectIndex(0);
+      setProjectFormData(projectForms[0] ?? emptyProjectForm);
+      setProjectSaveStatus("success");
+      setProjectStatusMessage("Project deleted successfully.");
+      router.refresh();
+    } catch (error) {
+      setProjectSaveStatus("error");
+      setProjectStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting project."
+      );
+    }
+  }
+
   async function handleProjectSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1013,15 +1093,25 @@ export function AdminPanel({
           </form>
         ) : activeTab === "projects" ? (
           <form onSubmit={handleProjectSubmit} className="space-y-8 p-6">
-            <div>
-              <label htmlFor="projectSelect" className={labelClass}>Select Project</label>
-              <select id="projectSelect" value={selectedProjectIndex} onChange={(event) => setSelectedProjectIndex(Number(event.target.value))} className={inputClass}>
-                {projectForms.map((project, index) => (
-                  <option key={project.slug} value={index}>
-                    {project.sortOrder}. {project.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+              <div>
+                <label htmlFor="projectSelect" className={labelClass}>Select Project</label>
+                <select id="projectSelect" value={selectedProjectIndex} onChange={(event) => setSelectedProjectIndex(Number(event.target.value))} className={inputClass}>
+                  {projectForms.map((project, index) => (
+                    <option key={project.slug} value={index}>
+                      {project.sortOrder}. {project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={createProjectDraft} className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-5 py-3 text-sm font-bold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/10">
+                New Project
+              </button>
+
+              <button type="button" onClick={handleProjectDelete} disabled={projectSaveStatus === "saving" || projectFormData.slug.trim().length === 0} className="rounded-xl border border-red-400/30 bg-red-400/5 px-5 py-3 text-sm font-bold text-red-200 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Delete Selected
+              </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1112,7 +1202,7 @@ export function AdminPanel({
             {projectStatusMessage ? <div className={statusClass(projectSaveStatus)}>{projectStatusMessage}</div> : null}
 
             <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-slate-500">This tab updates one selected project at a time.</p>
+              <p className="text-xs leading-5 text-slate-500">This tab can create, update, and delete projects.</p>
               <button type="submit" disabled={projectSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {projectSaveStatus === "saving" ? "Saving..." : "Save Selected Project"}
               </button>
