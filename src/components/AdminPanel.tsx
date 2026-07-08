@@ -906,6 +906,75 @@ export function AdminPanel({
     }
   }
 
+  function createAchievementDraft() {
+    setAchievementFormData({
+      ...emptyAchievementForm,
+      slug: `new-achievement-${Date.now()}`,
+      title: "New Achievement",
+      description: "Write the achievement description here.",
+      sortOrder: achievementForms.length + 1
+    });
+
+    setAchievementSaveStatus("success");
+    setAchievementStatusMessage(
+      "New achievement draft created. Fill in the details, then click Save Achievement."
+    );
+  }
+
+  async function handleAchievementDelete() {
+    const slug = achievementFormData.slug.trim();
+
+    if (!slug) {
+      setAchievementSaveStatus("error");
+      setAchievementStatusMessage("Cannot delete an achievement without a slug.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete achievement "${achievementFormData.title || slug}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setAchievementSaveStatus("saving");
+    setAchievementStatusMessage("Deleting achievement from Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/achievements", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          slug
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete achievement.");
+      }
+
+      setSelectedAchievementIndex(0);
+      setAchievementFormData(achievementForms[0] ?? emptyAchievementForm);
+      setAchievementSaveStatus("success");
+      setAchievementStatusMessage("Achievement deleted successfully.");
+      router.refresh();
+    } catch (error) {
+      setAchievementSaveStatus("error");
+      setAchievementStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting achievement."
+      );
+    }
+  }
+
   async function handleAchievementSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1486,15 +1555,25 @@ export function AdminPanel({
           </form>
         ) : activeTab === "achievements" ? (
           <form onSubmit={handleAchievementSubmit} className="space-y-8 p-6">
-            <div>
-              <label htmlFor="achievementSelect" className={labelClass}>Select Achievement</label>
-              <select id="achievementSelect" value={selectedAchievementIndex} onChange={(event) => setSelectedAchievementIndex(Number(event.target.value))} className={inputClass}>
-                {achievementForms.map((achievement, index) => (
-                  <option key={achievement.slug} value={index}>
-                    {achievement.sortOrder}. {achievement.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+              <div>
+                <label htmlFor="achievementSelect" className={labelClass}>Select Achievement</label>
+                <select id="achievementSelect" value={selectedAchievementIndex} onChange={(event) => setSelectedAchievementIndex(Number(event.target.value))} className={inputClass}>
+                  {achievementForms.map((achievement, index) => (
+                    <option key={achievement.slug} value={index}>
+                      {achievement.sortOrder}. {achievement.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={createAchievementDraft} className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-5 py-3 text-sm font-bold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/10">
+                New Achievement
+              </button>
+
+              <button type="button" onClick={handleAchievementDelete} disabled={achievementSaveStatus === "saving" || achievementFormData.slug.trim().length === 0} className="rounded-xl border border-red-400/30 bg-red-400/5 px-5 py-3 text-sm font-bold text-red-200 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Delete Selected
+              </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1522,7 +1601,7 @@ export function AdminPanel({
             {achievementStatusMessage ? <div className={statusClass(achievementSaveStatus)}>{achievementStatusMessage}</div> : null}
 
             <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-slate-500">This tab updates one selected achievement at a time.</p>
+              <p className="text-xs leading-5 text-slate-500">This tab can create, update, and delete achievements.</p>
               <button type="submit" disabled={achievementSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {achievementSaveStatus === "saving" ? "Saving..." : "Save Achievement"}
               </button>
