@@ -9,6 +9,7 @@ type ExperiencePayload = {
   period: string;
   description: string;
   highlights: string[];
+  featuredImageUrl: string;
   sortOrder: number;
 };
 
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
       period,
       description,
       highlights,
+      featuredImageUrl,
       sortOrder
     } = experience;
 
@@ -151,6 +153,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!isString(featuredImageUrl)) {
+      return NextResponse.json(
+        { error: "Missing or invalid field: featuredImageUrl" },
+        { status: 400 }
+      );
+    }
+
     if (typeof sortOrder !== "number" || sortOrder < 1) {
       return NextResponse.json(
         { error: "Missing or invalid field: sortOrder" },
@@ -174,6 +183,10 @@ export async function POST(request: Request) {
           period: period.trim().length > 0 ? period.trim() : null,
           description: description.trim(),
           highlights: highlights.map((highlight) => highlight.trim()).filter(Boolean),
+          featured_image_url:
+            featuredImageUrl.trim().length > 0
+              ? featuredImageUrl.trim()
+              : null,
           sort_order: sortOrder
         },
         {

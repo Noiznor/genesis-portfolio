@@ -17,6 +17,7 @@ export interface Project {
   toolsUsed: string[];
   technicalWork: string[];
   result: string;
+  featuredImageUrl?: string;
   links: ProjectLink[];
 }
 
@@ -38,6 +39,7 @@ export interface Experience {
   location?: string;
   period?: string;
   description: string;
+  featuredImageUrl?: string;
   highlights: string[];
 }
 

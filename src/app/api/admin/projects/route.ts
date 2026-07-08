@@ -16,6 +16,7 @@ type ProjectPayload = {
   result: string;
   githubUrl: string;
   documentationUrl: string;
+  featuredImageUrl: string;
   sortOrder: number;
 };
 
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
       result,
       githubUrl,
       documentationUrl,
+      featuredImageUrl,
       sortOrder
     } = project;
 
@@ -214,6 +216,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!isString(featuredImageUrl)) {
+      return NextResponse.json(
+        { error: "Missing or invalid field: featuredImageUrl" },
+        { status: 400 }
+      );
+    }
+
     if (typeof sortOrder !== "number" || sortOrder < 1) {
       return NextResponse.json(
         { error: "Missing or invalid field: sortOrder" },
@@ -246,6 +255,10 @@ export async function POST(request: Request) {
           documentation_url:
             documentationUrl.trim().length > 0
               ? documentationUrl.trim()
+              : null,
+          featured_image_url:
+            featuredImageUrl.trim().length > 0
+              ? featuredImageUrl.trim()
               : null,
           sort_order: sortOrder
         },

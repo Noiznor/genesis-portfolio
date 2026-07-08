@@ -70,6 +70,7 @@ type SupabaseProject = {
   result: string;
   github_url: string;
   documentation_url: string | null;
+  featured_image_url: string | null;
   sort_order: number;
 };
 
@@ -89,6 +90,7 @@ type SupabaseExperience = {
   period: string | null;
   description: string;
   highlights: string[];
+  featured_image_url: string | null;
   sort_order: number;
 };
 
@@ -165,6 +167,7 @@ function mapProject(project: SupabaseProject): Project {
     toolsUsed: project.tools_used ?? [],
     technicalWork: project.technical_work ?? [],
     result: project.result,
+    featuredImageUrl: project.featured_image_url ?? undefined,
     links: [
       {
         label: "GitHub",
@@ -199,6 +202,7 @@ function mapExperience(experience: SupabaseExperience): Experience {
     location: experience.location ?? undefined,
     period: experience.period ?? undefined,
     description: experience.description,
+    featuredImageUrl: experience.featured_image_url ?? undefined,
     highlights: experience.highlights ?? []
   };
 }
@@ -246,7 +250,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       supabase
         .from("projects")
         .select(
-          "slug,title,category,description,highlights,tech_stack,overview,problem_solved,role,tools_used,technical_work,result,github_url,documentation_url,sort_order"
+          "slug,title,category,description,highlights,tech_stack,overview,problem_solved,role,tools_used,technical_work,result,github_url,documentation_url,featured_image_url,sort_order"
         )
         .order("sort_order", { ascending: true }),
       supabase
@@ -256,7 +260,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       supabase
         .from("experiences")
         .select(
-          "slug,title,organization,location,period,description,highlights,sort_order"
+          "slug,title,organization,location,period,description,highlights,featured_image_url,sort_order"
         )
         .order("sort_order", { ascending: true }),
       supabase

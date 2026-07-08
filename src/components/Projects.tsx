@@ -9,6 +9,39 @@ type ProjectsProps = {
   projects: Project[];
 };
 
+function ProjectImage({
+  imageUrl,
+  title
+}: {
+  imageUrl?: string;
+  title: string;
+}) {
+  if (imageUrl) {
+    return (
+      <div className="h-52 overflow-hidden border-b border-emerald-400/10 bg-slate-900/70">
+        <img
+          src={imageUrl}
+          alt={`${title} featured image`}
+          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-52 items-center justify-center border-b border-emerald-400/10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_55%)]">
+      <div className="rounded-2xl border border-emerald-400/20 bg-slate-950/80 px-6 py-5 text-center shadow-lg shadow-emerald-500/10">
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-emerald-300">
+          Project Image
+        </p>
+        <p className="mt-2 text-sm text-slate-400">
+          Add URL in sudo edit
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function Projects({ projects }: ProjectsProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
@@ -46,58 +79,62 @@ export function Projects({ projects }: ProjectsProps) {
             tabIndex={0}
             onClick={() => openProject(project)}
             onKeyDown={(event) => handleCardKeyDown(event, project)}
-            className="group cursor-pointer rounded-2xl border border-emerald-400/10 bg-slate-950/75 p-6 shadow-lg shadow-emerald-500/5 outline-none transition hover:-translate-y-1 hover:border-emerald-400/35 hover:bg-emerald-400/[0.03] hover:shadow-emerald-500/15 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+            className="group cursor-pointer overflow-hidden rounded-2xl border border-emerald-400/10 bg-slate-950/75 shadow-lg shadow-emerald-500/5 outline-none transition hover:-translate-y-1 hover:border-emerald-400/35 hover:bg-emerald-400/[0.03] hover:shadow-emerald-500/15 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-300/40"
           >
-            <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">
-              {project.category}
-            </p>
+            <ProjectImage imageUrl={project.featuredImageUrl} title={project.title} />
 
-            <h3 className="mt-3 text-xl font-semibold text-slate-100 transition group-hover:text-emerald-200">
-              {project.title}
-            </h3>
+            <div className="p-6">
+              <p className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-lime-300">
+                {project.category}
+              </p>
 
-            <p className="mt-4 text-sm leading-6 text-slate-400">
-              {project.description}
-            </p>
+              <h3 className="mt-3 text-xl font-semibold text-slate-100 transition group-hover:text-emerald-200">
+                {project.title}
+              </h3>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              {project.techStack.slice(0, 6).map((tech) => (
-                <span
-                  key={tech}
-                  className="rounded-full border border-emerald-400/15 bg-emerald-400/5 px-3 py-1 text-xs text-emerald-100"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
+              <p className="mt-4 text-sm leading-6 text-slate-400">
+                {project.description}
+              </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {project.links.map((link) => (
-                <Link
-                  key={`${project.id}-${link.label}`}
-                  href={link.href}
-                  target={link.href.startsWith("http") ? "_blank" : undefined}
-                  rel={link.href.startsWith("http") ? "noreferrer" : undefined}
-                  onClick={(event) => {
-                    event.stopPropagation();
+              <div className="mt-5 flex flex-wrap gap-2">
+                {project.techStack.slice(0, 6).map((tech) => (
+                  <span
+                    key={tech}
+                    className="rounded-full border border-emerald-400/15 bg-emerald-400/5 px-3 py-1 text-xs text-emerald-100"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
 
-                    if (link.isPlaceholder || link.href === "#") {
-                      event.preventDefault();
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    event.stopPropagation();
-                  }}
-                  className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
-                    link.isPlaceholder || link.href === "#"
-                      ? "cursor-not-allowed border-slate-700 text-slate-500"
-                      : "border-emerald-400/25 text-emerald-200 hover:border-emerald-300 hover:bg-emerald-400/10"
-                  }`}
-                  aria-disabled={link.isPlaceholder || link.href === "#"}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {project.links.map((link) => (
+                  <Link
+                    key={`${project.id}-${link.label}`}
+                    href={link.href}
+                    target={link.href.startsWith("http") ? "_blank" : undefined}
+                    rel={link.href.startsWith("http") ? "noreferrer" : undefined}
+                    onClick={(event) => {
+                      event.stopPropagation();
+
+                      if (link.isPlaceholder || link.href === "#") {
+                        event.preventDefault();
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    className={`rounded-full border px-4 py-2 text-xs font-bold transition ${
+                      link.isPlaceholder || link.href === "#"
+                        ? "cursor-not-allowed border-slate-700 text-slate-500"
+                        : "border-emerald-400/25 text-emerald-200 hover:border-emerald-300 hover:bg-emerald-400/10"
+                    }`}
+                    aria-disabled={link.isPlaceholder || link.href === "#"}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </article>
         ))}
@@ -111,6 +148,16 @@ export function Projects({ projects }: ProjectsProps) {
       >
         {selectedProject ? (
           <div className="space-y-8">
+            {selectedProject.featuredImageUrl ? (
+              <div className="overflow-hidden rounded-2xl border border-emerald-400/15 bg-slate-950">
+                <img
+                  src={selectedProject.featuredImageUrl}
+                  alt={`${selectedProject.title} featured image`}
+                  className="max-h-[420px] w-full object-cover"
+                />
+              </div>
+            ) : null}
+
             <div>
               <h3 className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-emerald-300">
                 Project Overview

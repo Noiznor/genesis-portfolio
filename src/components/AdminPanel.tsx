@@ -36,6 +36,7 @@ type ProjectFormData = {
   result: string;
   githubUrl: string;
   documentationUrl: string;
+  featuredImageUrl: string;
   sortOrder: number;
 };
 
@@ -55,6 +56,7 @@ type ExperienceFormData = {
   period: string;
   description: string;
   highlightsText: string;
+  featuredImageUrl: string;
   sortOrder: number;
 };
 
@@ -92,6 +94,7 @@ const emptyProjectForm: ProjectFormData = {
   result: "",
   githubUrl: "",
   documentationUrl: "",
+  featuredImageUrl: "",
   sortOrder: 1
 };
 
@@ -111,6 +114,7 @@ const emptyExperienceForm: ExperienceFormData = {
   period: "",
   description: "",
   highlightsText: "",
+  featuredImageUrl: "",
   sortOrder: 1
 };
 
@@ -174,6 +178,7 @@ function mapProjectToForm(project: Project, index: number): ProjectFormData {
     result: project.result,
     githubUrl: getProjectLink(project, "GitHub"),
     documentationUrl: documentationUrl === "#" ? "" : documentationUrl,
+    featuredImageUrl: project.featuredImageUrl ?? "",
     sortOrder: index + 1
   };
 }
@@ -202,6 +207,7 @@ function mapExperienceToForm(
     location: experience.location ?? "",
     period: experience.period ?? "",
     description: experience.description,
+    featuredImageUrl: experience.featuredImageUrl ?? "",
     highlightsText: arrayToText(experience.highlights),
     sortOrder: index + 1
   };
@@ -549,6 +555,7 @@ export function AdminPanel({
       result: "Describe the project result or outcome.",
       githubUrl: "",
       documentationUrl: "",
+      featuredImageUrl: "",
       sortOrder: projectForms.length + 1
     });
 
@@ -641,6 +648,7 @@ export function AdminPanel({
             result: projectFormData.result,
             githubUrl: projectFormData.githubUrl,
             documentationUrl: projectFormData.documentationUrl,
+            featuredImageUrl: projectFormData.featuredImageUrl,
             sortOrder: projectFormData.sortOrder
           }
         })
@@ -793,6 +801,7 @@ export function AdminPanel({
       location: "",
       period: "",
       description: "Write the experience description here.",
+      featuredImageUrl: "",
       highlightsText: "First experience highlight\nSecond experience highlight",
       sortOrder: experienceForms.length + 1
     });
@@ -879,6 +888,7 @@ export function AdminPanel({
             period: experienceFormData.period,
             description: experienceFormData.description,
             highlights: linesToArray(experienceFormData.highlightsText),
+            featuredImageUrl: experienceFormData.featuredImageUrl,
             sortOrder: experienceFormData.sortOrder
           }
         })
@@ -1409,6 +1419,11 @@ export function AdminPanel({
                 <label htmlFor="projectDocumentationUrl" className={labelClass}>Documentation URL</label>
                 <input id="projectDocumentationUrl" value={projectFormData.documentationUrl} onChange={(event) => updateProjectField("documentationUrl", event)} placeholder="Leave blank to disable documentation button" className={inputClass} />
               </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="projectFeaturedImageUrl" className={labelClass}>Featured Image URL</label>
+                <input id="projectFeaturedImageUrl" value={projectFormData.featuredImageUrl} onChange={(event) => updateProjectField("featuredImageUrl", event)} placeholder="Optional public image URL for project card" className={inputClass} />
+              </div>
             </div>
 
             {projectStatusMessage ? <div className={statusClass(projectSaveStatus)}>{projectStatusMessage}</div> : null}
@@ -1537,6 +1552,11 @@ export function AdminPanel({
             <div>
               <label htmlFor="experienceDescription" className={labelClass}>Description</label>
               <textarea id="experienceDescription" value={experienceFormData.description} onChange={(event) => updateExperienceField("description", event)} rows={4} className={inputClass} required />
+            </div>
+
+            <div>
+              <label htmlFor="experienceFeaturedImageUrl" className={labelClass}>Featured Image URL</label>
+              <input id="experienceFeaturedImageUrl" value={experienceFormData.featuredImageUrl} onChange={(event) => updateExperienceField("featuredImageUrl", event)} placeholder="Optional public image URL for experience card" className={inputClass} />
             </div>
 
             <div>
