@@ -668,6 +668,76 @@ export function AdminPanel({
     }
   }
 
+  function createSkillCategoryDraft() {
+    setSkillCategoryFormData({
+      ...emptySkillCategoryForm,
+      slug: `new-skill-category-${Date.now()}`,
+      title: "New Skill Category",
+      description: "Write the skill category description here.",
+      skillsText: "Skill One\nSkill Two\nSkill Three",
+      sortOrder: skillCategoryForms.length + 1
+    });
+
+    setSkillSaveStatus("success");
+    setSkillStatusMessage(
+      "New skill category draft created. Fill in the details, then click Save Skill Category."
+    );
+  }
+
+  async function handleSkillCategoryDelete() {
+    const slug = skillCategoryFormData.slug.trim();
+
+    if (!slug) {
+      setSkillSaveStatus("error");
+      setSkillStatusMessage("Cannot delete a skill category without a slug.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete skill category "${skillCategoryFormData.title || slug}"? This cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setSkillSaveStatus("saving");
+    setSkillStatusMessage("Deleting skill category from Supabase...");
+
+    try {
+      const response = await fetch("/api/admin/skill-categories", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          slug
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete skill category.");
+      }
+
+      setSelectedSkillCategoryIndex(0);
+      setSkillCategoryFormData(skillCategoryForms[0] ?? emptySkillCategoryForm);
+      setSkillSaveStatus("success");
+      setSkillStatusMessage("Skill category deleted successfully.");
+      router.refresh();
+    } catch (error) {
+      setSkillSaveStatus("error");
+      setSkillStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting skill category."
+      );
+    }
+  }
+
   async function handleSkillCategorySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1210,15 +1280,25 @@ export function AdminPanel({
           </form>
         ) : activeTab === "skills" ? (
           <form onSubmit={handleSkillCategorySubmit} className="space-y-8 p-6">
-            <div>
-              <label htmlFor="skillSelect" className={labelClass}>Select Skill Category</label>
-              <select id="skillSelect" value={selectedSkillCategoryIndex} onChange={(event) => setSelectedSkillCategoryIndex(Number(event.target.value))} className={inputClass}>
-                {skillCategoryForms.map((skillCategory, index) => (
-                  <option key={skillCategory.slug} value={index}>
-                    {skillCategory.sortOrder}. {skillCategory.title}
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+              <div>
+                <label htmlFor="skillSelect" className={labelClass}>Select Skill Category</label>
+                <select id="skillSelect" value={selectedSkillCategoryIndex} onChange={(event) => setSelectedSkillCategoryIndex(Number(event.target.value))} className={inputClass}>
+                  {skillCategoryForms.map((skillCategory, index) => (
+                    <option key={skillCategory.slug} value={index}>
+                      {skillCategory.sortOrder}. {skillCategory.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" onClick={createSkillCategoryDraft} className="rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-5 py-3 text-sm font-bold text-emerald-200 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-400/10">
+                New Skill Category
+              </button>
+
+              <button type="button" onClick={handleSkillCategoryDelete} disabled={skillSaveStatus === "saving" || skillCategoryFormData.slug.trim().length === 0} className="rounded-xl border border-red-400/30 bg-red-400/5 px-5 py-3 text-sm font-bold text-red-200 transition hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50">
+                Delete Selected
+              </button>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1251,7 +1331,7 @@ export function AdminPanel({
             {skillStatusMessage ? <div className={statusClass(skillSaveStatus)}>{skillStatusMessage}</div> : null}
 
             <div className="flex flex-col gap-3 border-t border-emerald-400/10 pt-6 md:flex-row md:items-center md:justify-between">
-              <p className="text-xs leading-5 text-slate-500">This tab updates one selected skill category at a time.</p>
+              <p className="text-xs leading-5 text-slate-500">This tab can create, update, and delete skill categories.</p>
               <button type="submit" disabled={skillSaveStatus === "saving"} className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60">
                 {skillSaveStatus === "saving" ? "Saving..." : "Save Skill Category"}
               </button>
