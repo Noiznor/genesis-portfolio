@@ -2,7 +2,7 @@
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { SiteProfile } from "@/lib/portfolio-data";
 import type { Achievement, Certification, Experience, Project, SkillCategory } from "@/types";
 
@@ -254,6 +254,7 @@ export function AdminPanel({
   adminPassword
 }: AdminPanelProps) {
   const router = useRouter();
+  const hasInitializedOpenPanel = useRef(false);
 
   const projectForms = useMemo(
     () => projects.map((project, index) => mapProjectToForm(project, index)),
@@ -340,9 +341,16 @@ export function AdminPanel({
     useState("");
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      hasInitializedOpenPanel.current = false;
+      return;
+    }
+
+    setSiteFormData(siteProfile);
+
+    if (!hasInitializedOpenPanel.current) {
+      hasInitializedOpenPanel.current = true;
       setActiveTab("site");
-      setSiteFormData(siteProfile);
 
       setSelectedProjectIndex(0);
       setProjectFormData(projectForms[0] ?? emptyProjectForm);
