@@ -12,6 +12,8 @@ type SiteProfilePayload = {
   email: string;
   location: string;
   resumePath: string;
+  resumePdfUrl?: string;
+  resumePdfPath?: string;
   personalGithub: string;
   sphrGithub: string;
   linkedin: string;
@@ -104,6 +106,8 @@ export async function POST(request: Request) {
           email: profile.email!.trim(),
           location: profile.location!.trim(),
           resume_path: profile.resumePath!.trim(),
+          resume_pdf_url: profile.resumePdfUrl?.trim() ?? "",
+          resume_pdf_path: profile.resumePdfPath?.trim() ?? "",
           personal_github: profile.personalGithub!.trim(),
           sphr_github: profile.sphrGithub!.trim(),
           linkedin: profile.linkedin!.trim()

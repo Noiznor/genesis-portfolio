@@ -24,6 +24,8 @@ export type SiteProfile = {
   email: string;
   location: string;
   resumePath: string;
+  resumePdfUrl?: string;
+  resumePdfPath?: string;
   personalGithub: string;
   sphrGithub: string;
   linkedin: string;
@@ -50,6 +52,8 @@ type SupabaseSiteProfile = {
   email: string;
   location: string;
   resume_path: string;
+  resume_pdf_url: string | null;
+  resume_pdf_path: string | null;
   personal_github: string;
   sphr_github: string;
   linkedin: string;
@@ -128,6 +132,8 @@ const fallbackSiteProfile: SiteProfile = {
   email: fallbackSiteConfig.email,
   location: fallbackSiteConfig.location,
   resumePath: fallbackSiteConfig.resumePath,
+  resumePdfUrl: "",
+  resumePdfPath: "",
   personalGithub: fallbackSiteConfig.personalGithub,
   sphrGithub: fallbackSiteConfig.sphrGithub,
   linkedin: fallbackSiteConfig.linkedin
@@ -145,6 +151,8 @@ function mapSiteProfile(profile: SupabaseSiteProfile): SiteProfile {
     email: profile.email,
     location: profile.location,
     resumePath: profile.resume_path,
+    resumePdfUrl: profile.resume_pdf_url ?? "",
+    resumePdfPath: profile.resume_pdf_path ?? "",
     personalGithub: profile.personal_github,
     sphrGithub: profile.sphr_github,
     linkedin: profile.linkedin
@@ -243,7 +251,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       supabase
         .from("site_profile")
         .select(
-          "owner_name,hero_eyebrow,hero_title,hero_subtitle,hero_description,about_title,about_body,email,location,resume_path,personal_github,sphr_github,linkedin"
+          "owner_name,hero_eyebrow,hero_title,hero_subtitle,hero_description,about_title,about_body,email,location,resume_path,resume_pdf_url,resume_pdf_path,personal_github,sphr_github,linkedin"
         )
         .eq("id", "main")
         .single(),
@@ -297,7 +305,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         name: siteProfile.ownerName,
         email: siteProfile.email,
         location: siteProfile.location,
-        resumePath: siteProfile.resumePath,
+        resumePath: siteProfile.resumePdfUrl || siteProfile.resumePath,
         personalGithub: siteProfile.personalGithub,
         sphrGithub: siteProfile.sphrGithub,
         linkedin: siteProfile.linkedin

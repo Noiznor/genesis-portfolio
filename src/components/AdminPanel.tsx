@@ -547,6 +547,113 @@ export function AdminPanel({
     }
   }
 
+  async function uploadResumePdf(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setSiteSaveStatus("saving");
+    setSiteStatusMessage("Uploading resume PDF to Supabase Storage...");
+
+    try {
+      const formData = new FormData();
+      formData.append("password", adminPassword);
+      formData.append("file", file);
+
+      const response = await fetch("/api/admin/resume", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = (await response.json()) as {
+        publicUrl?: string;
+        path?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !result.publicUrl || !result.path) {
+        throw new Error(result.error || "Failed to upload resume PDF.");
+      }
+
+      setSiteFormData((current) => ({
+        ...current,
+        resumePdfUrl: result.publicUrl,
+        resumePdfPath: result.path
+      }));
+
+      setSiteSaveStatus("success");
+      setSiteStatusMessage("Resume PDF uploaded. Click Save Site Profile to publish it.");
+    } catch (error) {
+      setSiteSaveStatus("error");
+      setSiteStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while uploading resume PDF."
+      );
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function deleteResumePdf() {
+    const resumePdfUrl = siteFormData.resumePdfUrl?.trim() ?? "";
+    const resumePdfPath = siteFormData.resumePdfPath?.trim() ?? "";
+
+    if (!resumePdfUrl && !resumePdfPath) {
+      setSiteSaveStatus("error");
+      setSiteStatusMessage("There is no uploaded resume PDF to delete or clear.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete/clear the uploaded resume PDF? If it was uploaded to Supabase Storage, the file will also be deleted."
+    );
+
+    if (!confirmed) return;
+
+    setSiteSaveStatus("saving");
+    setSiteStatusMessage("Deleting resume PDF from Supabase Storage...");
+
+    try {
+      const response = await fetch("/api/admin/resume", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          password: adminPassword,
+          path: resumePdfPath,
+          publicUrl: resumePdfUrl
+        })
+      });
+
+      const result = (await response.json()) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete resume PDF.");
+      }
+
+      setSiteFormData((current) => ({
+        ...current,
+        resumePdfUrl: "",
+        resumePdfPath: ""
+      }));
+
+      setSiteSaveStatus("success");
+      setSiteStatusMessage("Resume PDF cleared. Click Save Site Profile to store the change.");
+    } catch (error) {
+      setSiteSaveStatus("error");
+      setSiteStatusMessage(
+        error instanceof Error
+          ? error.message
+          : "Unexpected error while deleting resume PDF."
+      );
+    }
+  }
+
   function updateSiteField(
     field: keyof SiteProfile,
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -1360,8 +1467,39 @@ export function AdminPanel({
               </div>
 
               <div>
-                <label htmlFor="resumePath" className={labelClass}>Resume Path</label>
+                <label htmlFor="resumePath" className={labelClass}>Resume Fallback Path</label>
                 <input id="resumePath" value={siteFormData.resumePath} onChange={(event) => updateSiteField("resumePath", event)} className={inputClass} required />
+                <p className="mt-2 text-xs text-slate-500">
+                  Used only when no Supabase resume PDF is uploaded.
+                </p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="resumePdfUrl" className={labelClass}>Uploaded Resume PDF URL</label>
+                <input id="resumePdfUrl" value={siteFormData.resumePdfUrl ?? ""} onChange={(event) => updateSiteField("resumePdfUrl", event)} placeholder="Upload a PDF or paste a public PDF URL" className={inputClass} />
+
+                <input type="hidden" value={siteFormData.resumePdfPath ?? ""} readOnly />
+
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <label htmlFor="resumePdfUpload" className="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300 hover:bg-emerald-400/10">
+                    Upload Resume PDF
+                    <input id="resumePdfUpload" type="file" accept="application/pdf" className="hidden" onChange={uploadResumePdf} />
+                  </label>
+
+                  <button type="button" onClick={deleteResumePdf} className="rounded-xl border border-red-400/30 bg-red-400/5 px-4 py-2 text-xs font-bold text-red-200 transition hover:border-red-300 hover:bg-red-400/10">
+                    Delete / Clear Resume PDF
+                  </button>
+
+                  {(siteFormData.resumePdfUrl || siteFormData.resumePath) ? (
+                    <a href={siteFormData.resumePdfUrl || siteFormData.resumePath} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-600 px-4 py-2 text-xs font-bold text-slate-200 transition hover:border-emerald-300 hover:text-emerald-200">
+                      Preview Current Resume
+                    </a>
+                  ) : null}
+                </div>
+
+                <p className="mt-2 text-xs text-slate-500">
+                  After uploading or clearing the PDF, click Save Site Profile to publish the change.
+                </p>
               </div>
             </div>
 

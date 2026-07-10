@@ -31,6 +31,11 @@ export function Hero({
   achievements,
   certifications
 }: HeroProps) {
+  const resumeHref = siteProfile.resumePdfUrl || siteProfile.resumePath;
+  const resumeDownloadHref = siteProfile.resumePdfUrl
+    ? `${siteProfile.resumePdfUrl}?download=Genesis_Polotan_Resume.pdf`
+    : siteProfile.resumePath;
+
   return (
     <section
       id="home"
@@ -62,10 +67,20 @@ export function Hero({
           </SmoothScrollLink>
 
           <Link
-            href={siteProfile.resumePath}
+            href={resumeHref}
+            target="_blank"
+            rel="noreferrer"
             className="rounded-xl border border-emerald-400/25 bg-slate-950/70 px-6 py-3 text-sm font-bold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200"
           >
-            Download Resume ↓
+            View Resume ?
+          </Link>
+
+          <Link
+            href={resumeDownloadHref}
+            download
+            className="rounded-xl border border-emerald-400/25 bg-slate-950/70 px-6 py-3 text-sm font-bold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200"
+          >
+            Download Resume ?
           </Link>
 
           <SmoothScrollLink
