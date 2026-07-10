@@ -1,7 +1,8 @@
-﻿import Link from "next/link";
+﻿import Image from "next/image";
+import Link from "next/link";
 import { navItems } from "@/data/site";
-import { SmoothScrollLink } from "@/components/SmoothScrollLink";
 import type { siteConfig as siteConfigType } from "@/data/site";
+import { SmoothScrollLink } from "@/components/SmoothScrollLink";
 
 type NavbarProps = {
   siteConfig: typeof siteConfigType;
@@ -25,9 +26,19 @@ export function Navbar({ siteConfig }: NavbarProps) {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <SmoothScrollLink
           href="#home"
-          className="font-mono text-sm font-bold tracking-wide text-emerald-100 transition hover:text-emerald-300"
+          className="flex items-center gap-3 text-emerald-100 transition hover:text-emerald-300"
         >
-          {siteConfig.name}
+          <Image
+            src="/brand/site-logo.png"
+            alt="Genesis I. Polotan logo"
+            width={40}
+            height={40}
+            className="h-10 w-10 object-contain"
+            priority
+          />
+          <span className="font-mono text-sm font-bold tracking-wide">
+            {siteConfig.name}
+          </span>
         </SmoothScrollLink>
 
         <div className="hidden items-center gap-6 text-sm font-medium text-slate-300 md:flex">
