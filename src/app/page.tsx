@@ -29,6 +29,7 @@ export default async function Home() {
           experiences={portfolioData.experiences}
           achievements={portfolioData.achievements}
           certifications={portfolioData.certifications}
+          galleryGroups={portfolioData.galleryGroups}
         />
         <About siteProfile={portfolioData.siteProfile} />
         <Skills skillCategories={portfolioData.skillCategories} />

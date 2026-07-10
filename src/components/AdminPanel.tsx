@@ -3,8 +3,9 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
+import { GalleryAdminEditor } from "@/components/GalleryAdminEditor";
 import type { SiteProfile } from "@/lib/portfolio-data";
-import type { Achievement, Certification, Experience, Project, SkillCategory } from "@/types";
+import type { Achievement, Certification, Experience, GalleryGroup, Project, SkillCategory } from "@/types";
 
 type AdminPanelProps = {
   isOpen: boolean;
@@ -15,11 +16,12 @@ type AdminPanelProps = {
   experiences: Experience[];
   achievements: Achievement[];
   certifications: Certification[];
+  galleryGroups: GalleryGroup[];
   adminPassword: string;
 };
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
-type ActiveTab = "site" | "projects" | "skills" | "experiences" | "achievements" | "certifications";
+type ActiveTab = "site" | "projects" | "skills" | "experiences" | "achievements" | "certifications" | "gallery";
 
 type ProjectFormData = {
   slug: string;
@@ -251,6 +253,7 @@ export function AdminPanel({
   experiences,
   achievements,
   certifications,
+  galleryGroups,
   adminPassword
 }: AdminPanelProps) {
   const router = useRouter();
@@ -1446,6 +1449,10 @@ export function AdminPanel({
           <button type="button" onClick={() => setActiveTab("certifications")} className={tabClass("certifications")}>
             Certifications
           </button>
+
+          <button type="button" onClick={() => setActiveTab("gallery")} className={tabClass("gallery")}>
+            Gallery
+          </button>
         </div>
 
         {activeTab === "site" ? (
@@ -1911,7 +1918,7 @@ export function AdminPanel({
               </button>
             </div>
           </form>
-        ) : (
+        ) : activeTab === "certifications" ? (
           <form onSubmit={handleCertificationSubmit} className="space-y-8 p-6">
             <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">
               <div>
@@ -2001,6 +2008,11 @@ export function AdminPanel({
               </button>
             </div>
           </form>
+        ) : (
+          <GalleryAdminEditor
+            galleryGroups={galleryGroups}
+            adminPassword={adminPassword}
+          />
         )}
       </div>
     </div>
