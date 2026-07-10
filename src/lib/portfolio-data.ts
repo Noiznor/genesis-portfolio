@@ -9,6 +9,7 @@ import type {
   Achievement,
   Certification,
   Experience,
+  GalleryGroup,
   Project,
   SkillCategory
 } from "@/types";
@@ -39,6 +40,7 @@ export type PortfolioData = {
   experiences: Experience[];
   achievements: Achievement[];
   certifications: Certification[];
+  galleryGroups: GalleryGroup[];
 };
 
 type SupabaseSiteProfile = {
@@ -223,6 +225,49 @@ function mapAchievement(achievement: SupabaseAchievement): Achievement {
   };
 }
 
+type SupabaseGalleryGroup = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  sort_order: number;
+};
+
+type SupabaseGalleryItem = {
+  group_id: string;
+  image_url: string;
+  image_path: string | null;
+  caption: string;
+  sort_order: number;
+};
+
+function mapGalleryGroups(
+  groups: SupabaseGalleryGroup[],
+  items: SupabaseGalleryItem[]
+): GalleryGroup[] {
+  const itemsByGroup = new Map<string, GalleryGroup["items"]>();
+
+  items.forEach((item, index) => {
+    const currentItems = itemsByGroup.get(item.group_id) ?? [];
+
+    currentItems.push({
+      id: item.image_path || item.image_url || String(index),
+      imageUrl: item.image_url,
+      imagePath: item.image_path ?? undefined,
+      caption: item.caption || undefined
+    });
+
+    itemsByGroup.set(item.group_id, currentItems);
+  });
+
+  return groups.map((group) => ({
+    id: group.slug,
+    title: group.title,
+    description: group.description,
+    items: itemsByGroup.get(group.id) ?? []
+  }));
+}
+
 function mapCertification(certification: SupabaseCertification): Certification {
   return {
     id: certification.slug,
@@ -246,7 +291,9 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       skillsResponse,
       experiencesResponse,
       achievementsResponse,
-      certificationsResponse
+      certificationsResponse,
+      galleryGroupsResponse,
+      galleryItemsResponse
     ] = await Promise.all([
       supabase
         .from("site_profile")
@@ -280,6 +327,14 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         .select(
           "slug,title,issuer,issue_date,credential_id,credential_url,certificate_image_url,description,sort_order"
         )
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("gallery_groups")
+        .select("id,slug,title,description,sort_order")
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("gallery_items")
+        .select("group_id,image_url,image_path,caption,sort_order")
         .order("sort_order", { ascending: true })
     ]);
 
@@ -289,7 +344,9 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       skillsResponse.error ||
       experiencesResponse.error ||
       achievementsResponse.error ||
-      certificationsResponse.error
+      certificationsResponse.error ||
+      galleryGroupsResponse.error ||
+      galleryItemsResponse.error
     ) {
       throw new Error("Failed to load one or more Supabase portfolio tables.");
     }
@@ -324,7 +381,11 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       ).map(mapAchievement),
       certifications: (
         (certificationsResponse.data ?? []) as SupabaseCertification[]
-      ).map(mapCertification)
+      ).map(mapCertification),
+      galleryGroups: mapGalleryGroups(
+        (galleryGroupsResponse.data ?? []) as SupabaseGalleryGroup[],
+        (galleryItemsResponse.data ?? []) as SupabaseGalleryItem[]
+      )
     };
   } catch {
     return {
@@ -334,7 +395,8 @@ export async function getPortfolioData(): Promise<PortfolioData> {
       skillCategories: fallbackSkillCategories,
       experiences: fallbackExperiences,
       achievements: fallbackAchievements,
-      certifications: fallbackCertifications
+      certifications: fallbackCertifications,
+      galleryGroups: []
     };
   }
 }

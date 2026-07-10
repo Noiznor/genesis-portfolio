@@ -60,6 +60,20 @@ export interface Certification {
   description: string;
 }
 
+export interface GalleryItem {
+  id: string;
+  imageUrl: string;
+  imagePath?: string;
+  caption?: string;
+}
+
+export interface GalleryGroup {
+  id: string;
+  title: string;
+  description: string;
+  items: GalleryItem[];
+}
+
 export interface NavItem {
   label: string;
   href: string;

@@ -5,6 +5,7 @@ import { Certifications } from "@/components/Certifications";
 import { Contact } from "@/components/Contact";
 import { Experience } from "@/components/Experience";
 import { Footer } from "@/components/Footer";
+import { Gallery } from "@/components/Gallery";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
 import { Projects } from "@/components/Projects";
@@ -35,6 +36,7 @@ export default async function Home() {
         <Experience experiences={portfolioData.experiences} />
         <Achievements achievements={portfolioData.achievements} />
         <Certifications certifications={portfolioData.certifications} />
+        <Gallery galleryGroups={portfolioData.galleryGroups} />
         <ResumeCTA siteProfile={portfolioData.siteProfile} />
         <Contact siteProfile={portfolioData.siteProfile} />
         <Footer siteProfile={portfolioData.siteProfile} />
