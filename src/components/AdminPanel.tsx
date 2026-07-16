@@ -539,7 +539,7 @@ export function AdminPanel({
 
       setImageUrl("");
       setStatus("success");
-      setMessage("Image URL cleared. Click Save to store the change.");
+      setMessage("Media URL cleared. Click Save to store the change.");
     } catch (error) {
       setStatus("error");
       setMessage(
@@ -1690,13 +1690,13 @@ export function AdminPanel({
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="projectFeaturedImageUrl" className={labelClass}>Featured Image URL</label>
+                <label htmlFor="projectFeaturedImageUrl" className={labelClass}>Featured Media URL</label>
                 <input id="projectFeaturedImageUrl" value={projectFormData.featuredImageUrl} onChange={(event) => updateProjectField("featuredImageUrl", event)} placeholder="Optional public image URL for project card" className={inputClass} />
 
                 <div className="mt-3 flex flex-wrap gap-3">
                   <label htmlFor="projectImageUpload" className="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300 hover:bg-emerald-400/10">
                     Upload Image
-                    <input id="projectImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(event) => uploadAdminImage(event, "projects", (url) => setProjectFormData((current) => ({ ...current, featuredImageUrl: url })), setProjectSaveStatus, setProjectStatusMessage)} />
+                    <input id="projectImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="hidden" onChange={(event) => uploadAdminImage(event, "projects", (url) => setProjectFormData((current) => ({ ...current, featuredImageUrl: url })), setProjectSaveStatus, setProjectStatusMessage)} />
                   </label>
 
                   <button type="button" onClick={() => deleteAdminImage(projectFormData.featuredImageUrl, (url) => setProjectFormData((current) => ({ ...current, featuredImageUrl: url })), setProjectSaveStatus, setProjectStatusMessage)} className="rounded-xl border border-red-400/30 bg-red-400/5 px-4 py-2 text-xs font-bold text-red-200 transition hover:border-red-300 hover:bg-red-400/10">
@@ -1835,13 +1835,13 @@ export function AdminPanel({
             </div>
 
             <div>
-              <label htmlFor="experienceFeaturedImageUrl" className={labelClass}>Featured Image URL</label>
+              <label htmlFor="experienceFeaturedImageUrl" className={labelClass}>Featured Media URL</label>
               <input id="experienceFeaturedImageUrl" value={experienceFormData.featuredImageUrl} onChange={(event) => updateExperienceField("featuredImageUrl", event)} placeholder="Optional public image URL for experience card" className={inputClass} />
 
               <div className="mt-3 flex flex-wrap gap-3">
                 <label htmlFor="experienceImageUpload" className="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300 hover:bg-emerald-400/10">
                   Upload Image
-                  <input id="experienceImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(event) => uploadAdminImage(event, "experiences", (url) => setExperienceFormData((current) => ({ ...current, featuredImageUrl: url })), setExperienceSaveStatus, setExperienceStatusMessage)} />
+                  <input id="experienceImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="hidden" onChange={(event) => uploadAdminImage(event, "experiences", (url) => setExperienceFormData((current) => ({ ...current, featuredImageUrl: url })), setExperienceSaveStatus, setExperienceStatusMessage)} />
                 </label>
 
                 <button type="button" onClick={() => deleteAdminImage(experienceFormData.featuredImageUrl, (url) => setExperienceFormData((current) => ({ ...current, featuredImageUrl: url })), setExperienceSaveStatus, setExperienceStatusMessage)} className="rounded-xl border border-red-400/30 bg-red-400/5 px-4 py-2 text-xs font-bold text-red-200 transition hover:border-red-300 hover:bg-red-400/10">
@@ -1978,13 +1978,13 @@ export function AdminPanel({
               </div>
 
               <div>
-                <label htmlFor="certificationImageUrl" className={labelClass}>Certificate Image URL</label>
+                <label htmlFor="certificationImageUrl" className={labelClass}>Certificate Media URL</label>
                 <input id="certificationImageUrl" value={certificationFormData.certificateImageUrl} onChange={(event) => updateCertificationField("certificateImageUrl", event)} placeholder="Optional image URL for now" className={inputClass} />
 
                 <div className="mt-3 flex flex-wrap gap-3">
                   <label htmlFor="certificationImageUpload" className="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300 hover:bg-emerald-400/10">
                     Upload Image
-                    <input id="certificationImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(event) => uploadAdminImage(event, "certifications", (url) => setCertificationFormData((current) => ({ ...current, certificateImageUrl: url })), setCertificationSaveStatus, setCertificationStatusMessage)} />
+                    <input id="certificationImageUpload" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="hidden" onChange={(event) => uploadAdminImage(event, "certifications", (url) => setCertificationFormData((current) => ({ ...current, certificateImageUrl: url })), setCertificationSaveStatus, setCertificationStatusMessage)} />
                   </label>
 
                   <button type="button" onClick={() => deleteAdminImage(certificationFormData.certificateImageUrl, (url) => setCertificationFormData((current) => ({ ...current, certificateImageUrl: url })), setCertificationSaveStatus, setCertificationStatusMessage)} className="rounded-xl border border-red-400/30 bg-red-400/5 px-4 py-2 text-xs font-bold text-red-200 transition hover:border-red-300 hover:bg-red-400/10">

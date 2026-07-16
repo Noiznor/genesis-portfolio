@@ -216,7 +216,7 @@ export function GalleryAdminEditor({
     if (!group || files.length === 0) return;
 
     setSaveStatus("saving");
-    setStatusMessage(`Uploading ${files.length} gallery image(s)...`);
+    setStatusMessage(`Uploading ${files.length} gallery media item(s)...`);
 
     try {
       const uploadedItems: GalleryItemFormData[] = [];
@@ -405,11 +405,11 @@ export function GalleryAdminEditor({
                   htmlFor={`galleryUpload-${groupIndex}`}
                   className="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-300 hover:bg-emerald-400/10"
                 >
-                  Upload Images
+                  Upload Images / Videos
                   <input
                     id={`galleryUpload-${groupIndex}`}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
                     multiple
                     className="hidden"
                     onChange={(event) => uploadGalleryImages(event, groupIndex)}
@@ -421,11 +421,11 @@ export function GalleryAdminEditor({
                   onClick={() => addManualGalleryImage(groupIndex)}
                   className="rounded-xl border border-slate-600 px-4 py-2 text-xs font-bold text-slate-200 transition hover:border-emerald-300 hover:text-emerald-200"
                 >
-                  Add Image URL Manually
+                  Add Media URL Manually
                 </button>
 
                 <span className="rounded-xl border border-slate-700 px-4 py-2 font-mono text-xs text-slate-400">
-                  {group.items.length} image(s)
+                  {group.items.length} media item(s)
                 </span>
               </div>
 
@@ -444,7 +444,7 @@ export function GalleryAdminEditor({
                         />
                       ) : (
                         <div className="flex h-48 items-center justify-center bg-slate-900 text-sm text-slate-500">
-                          Paste image URL below
+                          Paste media URL below
                         </div>
                       )}
 
@@ -454,7 +454,7 @@ export function GalleryAdminEditor({
                             htmlFor={`galleryImageUrl-${groupIndex}-${itemIndex}`}
                             className={labelClass}
                           >
-                            Image URL
+                            Media URL
                           </label>
                           <input
                             id={`galleryImageUrl-${groupIndex}-${itemIndex}`}
@@ -500,7 +500,7 @@ export function GalleryAdminEditor({
                           onClick={() => removeGalleryItem(groupIndex, itemIndex)}
                           className="w-full rounded-xl border border-red-400/30 bg-red-400/5 px-4 py-2 text-xs font-bold text-red-200 transition hover:border-red-300 hover:bg-red-400/10"
                         >
-                          Remove Image
+                          Remove Media
                         </button>
                       </div>
                     </div>
@@ -508,7 +508,7 @@ export function GalleryAdminEditor({
                 </div>
               ) : (
                 <p className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 text-sm text-slate-500">
-                  No images in this group yet. Upload images or add an image URL manually.
+                  No media in this group yet. Upload images/videos or add a media URL manually.
                 </p>
               )}
             </div>
