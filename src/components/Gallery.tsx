@@ -7,6 +7,60 @@ type GalleryProps = {
   galleryGroups: GalleryGroup[];
 };
 
+function isVideoItem(item: GalleryItem) {
+  if (item.mediaType === "video") return true;
+
+  return /\.(mp4|webm|mov)(\?|$)/i.test(item.imageUrl);
+}
+
+function mediaLabel(group: GalleryGroup) {
+  const videoCount = group.items.filter(isVideoItem).length;
+  const imageCount = group.items.length - videoCount;
+
+  if (imageCount > 0 && videoCount > 0) {
+    return `${imageCount} photos ? ${videoCount} videos`;
+  }
+
+  if (videoCount > 0) {
+    return `${videoCount} videos`;
+  }
+
+  return `${imageCount} photos`;
+}
+
+function MediaPreview({
+  item,
+  title,
+  className,
+  controls = false
+}: {
+  item: GalleryItem;
+  title: string;
+  className: string;
+  controls?: boolean;
+}) {
+  if (isVideoItem(item)) {
+    return (
+      <video
+        src={item.imageUrl}
+        className={className}
+        controls={controls}
+        muted={!controls}
+        playsInline
+        preload="metadata"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={item.imageUrl}
+      alt={item.caption || title}
+      className={className}
+    />
+  );
+}
+
 function GalleryPreviewStack({ group }: { group: GalleryGroup }) {
   const previewItems = group.items.slice(0, 3);
   const remainingCount = Math.max(group.items.length - 3, 0);
@@ -19,7 +73,7 @@ function GalleryPreviewStack({ group }: { group: GalleryGroup }) {
             Gallery
           </p>
           <p className="mt-2 text-sm text-slate-500">
-            Add images in sudo edit
+            Add media in sudo edit
           </p>
         </div>
       </div>
@@ -37,11 +91,17 @@ function GalleryPreviewStack({ group }: { group: GalleryGroup }) {
               : "relative overflow-hidden bg-slate-900"
           }
         >
-          <img
-            src={item.imageUrl}
-            alt={item.caption || group.title + " gallery image"}
+          <MediaPreview
+            item={item}
+            title={group.title}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
+
+          {isVideoItem(item) ? (
+            <div className="absolute left-3 top-3 rounded-full border border-cyan-300/30 bg-slate-950/80 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">
+              Video
+            </div>
+          ) : null}
 
           {index === previewItems.length - 1 && remainingCount > 0 ? (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-950/65">
@@ -82,7 +142,7 @@ export function Gallery({ galleryGroups }: GalleryProps) {
       </p>
 
       <h2 className="mt-3 text-3xl font-bold text-slate-50">
-        Highlights and photo memories
+        Highlights, photos, and videos
       </h2>
 
       <p className="mt-4 max-w-3xl leading-7 text-slate-400">
@@ -110,7 +170,7 @@ export function Gallery({ galleryGroups }: GalleryProps) {
                   </h3>
 
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-1 font-mono text-xs text-emerald-200">
-                    {group.items.length} photos
+                    {mediaLabel(group)}
                   </span>
                 </div>
 
@@ -167,11 +227,19 @@ export function Gallery({ galleryGroups }: GalleryProps) {
                   onClick={() => setSelectedItem(item)}
                   className="group overflow-hidden rounded-2xl border border-emerald-400/10 bg-slate-950 text-left shadow-lg shadow-emerald-500/5 outline-none transition hover:-translate-y-1 hover:border-emerald-400/30 focus-visible:ring-2 focus-visible:ring-emerald-300/40"
                 >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.caption || selectedGroup.title + " gallery image"}
-                    className="h-64 w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
+                  <div className="relative">
+                    <MediaPreview
+                      item={item}
+                      title={selectedGroup.title}
+                      className="h-64 w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+
+                    {isVideoItem(item) ? (
+                      <div className="absolute left-3 top-3 rounded-full border border-cyan-300/30 bg-slate-950/80 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-200">
+                        Video
+                      </div>
+                    ) : null}
+                  </div>
 
                   {item.caption ? (
                     <p className="p-4 text-sm text-slate-300">{item.caption}</p>
@@ -198,12 +266,24 @@ export function Gallery({ galleryGroups }: GalleryProps) {
             Close
           </button>
 
-          <div className="max-h-[85vh] max-w-6xl" onClick={(event) => event.stopPropagation()}>
-            <img
-              src={selectedItem.imageUrl}
-              alt={selectedItem.caption || "Gallery image"}
-              className="max-h-[80vh] w-auto rounded-2xl object-contain shadow-2xl"
-            />
+          <div
+            className="max-h-[85vh] max-w-6xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {isVideoItem(selectedItem) ? (
+              <video
+                src={selectedItem.imageUrl}
+                controls
+                playsInline
+                className="max-h-[80vh] w-full rounded-2xl object-contain shadow-2xl"
+              />
+            ) : (
+              <img
+                src={selectedItem.imageUrl}
+                alt={selectedItem.caption || "Gallery image"}
+                className="max-h-[80vh] w-auto rounded-2xl object-contain shadow-2xl"
+              />
+            )}
 
             {selectedItem.caption ? (
               <p className="mt-4 text-center text-sm text-slate-300">

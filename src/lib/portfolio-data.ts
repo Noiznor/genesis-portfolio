@@ -237,6 +237,7 @@ type SupabaseGalleryItem = {
   group_id: string;
   image_url: string;
   image_path: string | null;
+  media_type: "image" | "video" | null;
   caption: string;
   sort_order: number;
 };
@@ -254,6 +255,7 @@ function mapGalleryGroups(
       id: item.image_path || item.image_url || String(index),
       imageUrl: item.image_url,
       imagePath: item.image_path ?? undefined,
+      mediaType: item.media_type === "video" ? "video" : "image",
       caption: item.caption || undefined
     });
 
@@ -334,7 +336,7 @@ export async function getPortfolioData(): Promise<PortfolioData> {
         .order("sort_order", { ascending: true }),
       supabase
         .from("gallery_items")
-        .select("group_id,image_url,image_path,caption,sort_order")
+        .select("group_id,image_url,image_path,media_type,caption,sort_order")
         .order("sort_order", { ascending: true })
     ]);
 

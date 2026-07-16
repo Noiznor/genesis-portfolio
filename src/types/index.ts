@@ -64,6 +64,7 @@ export interface GalleryItem {
   id: string;
   imageUrl: string;
   imagePath?: string;
+  mediaType?: "image" | "video";
   caption?: string;
 }
 

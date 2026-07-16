@@ -1,14 +1,21 @@
-﻿import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 const BUCKET_NAME = "portfolio-gallery";
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
-const allowedMimeTypes = new Set([
+const allowedImageMimeTypes = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif"
+]);
+
+const allowedVideoMimeTypes = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime"
 ]);
 
 type DeleteRequestBody = {
@@ -43,7 +50,7 @@ function createAdminSupabaseClient(supabaseUrl: string, serviceRoleKey: string) 
 }
 
 function sanitizeFileName(fileName: string) {
-  const extension = fileName.split(".").pop()?.toLowerCase() || "png";
+  const extension = fileName.split(".").pop()?.toLowerCase() || "bin";
   const baseName = fileName
     .replace(/\.[^/.]+$/, "")
     .toLowerCase()
@@ -51,7 +58,7 @@ function sanitizeFileName(fileName: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
 
-  return `${baseName || "gallery-image"}.${extension}`;
+  return `${baseName || "gallery-media"}.${extension}`;
 }
 
 function getStoragePathFromPublicUrl(publicUrl: string) {
@@ -70,6 +77,12 @@ function getStoragePathFromPublicUrl(publicUrl: string) {
   } catch {
     return cleanPath;
   }
+}
+
+function getMediaType(fileType: string): "image" | "video" | null {
+  if (allowedImageMimeTypes.has(fileType)) return "image";
+  if (allowedVideoMimeTypes.has(fileType)) return "video";
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -98,21 +111,30 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return NextResponse.json(
-        { error: "Missing gallery image file." },
+        { error: "Missing gallery media file." },
         { status: 400 }
       );
     }
 
-    if (!allowedMimeTypes.has(file.type)) {
+    const mediaType = getMediaType(file.type);
+
+    if (!mediaType) {
       return NextResponse.json(
-        { error: "Unsupported image type. Use JPG, PNG, WEBP, or GIF." },
+        { error: "Unsupported media type. Use JPG, PNG, WEBP, GIF, MP4, WEBM, or MOV." },
         { status: 400 }
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    const maxSize = mediaType === "video" ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "Gallery image is too large. Maximum size is 20 MB." },
+        {
+          error:
+            mediaType === "video"
+              ? "Video is too large. Maximum size is 100 MB."
+              : "Image is too large. Maximum size is 20 MB."
+        },
         { status: 400 }
       );
     }
@@ -134,7 +156,8 @@ export async function POST(request: Request) {
 
     const safeFileName = sanitizeFileName(file.name);
     const uniquePart = `${Date.now()}-${crypto.randomUUID()}`;
-    const storagePath = `${safeGroupSlug}/${uniquePart}-${safeFileName}`;
+    const mediaFolder = mediaType === "video" ? "videos" : "images";
+    const storagePath = `${safeGroupSlug}/${mediaFolder}/${uniquePart}-${safeFileName}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(arrayBuffer);
@@ -158,13 +181,14 @@ export async function POST(request: Request) {
       .getPublicUrl(storagePath);
 
     return NextResponse.json({
-      message: "Gallery image uploaded successfully.",
+      message: "Gallery media uploaded successfully.",
       path: storagePath,
-      publicUrl: data.publicUrl
+      publicUrl: data.publicUrl,
+      mediaType
     });
   } catch {
     return NextResponse.json(
-      { error: "Unexpected server error while uploading gallery image." },
+      { error: "Unexpected server error while uploading gallery media." },
       { status: 500 }
     );
   }
@@ -196,7 +220,7 @@ export async function DELETE(request: Request) {
 
     if (!storagePath) {
       return NextResponse.json(
-        { error: "Missing gallery image storage path or public URL." },
+        { error: "Missing gallery media storage path or public URL." },
         { status: 400 }
       );
     }
@@ -215,11 +239,11 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({
-      message: "Gallery image deleted successfully."
+      message: "Gallery media deleted successfully."
     });
   } catch {
     return NextResponse.json(
-      { error: "Unexpected server error while deleting gallery image." },
+      { error: "Unexpected server error while deleting gallery media." },
       { status: 500 }
     );
   }
