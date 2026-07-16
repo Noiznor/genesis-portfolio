@@ -235,7 +235,10 @@ export async function POST(request: Request) {
           group_id: savedGroup.id,
           image_url: item.imageUrl.trim(),
           image_path: item.imagePath?.trim() || null,
-          media_type: item.mediaType === "video" ? "video" : "image",
+          media_type:
+            item.mediaType === "video" || /\\.(mp4|webm|mov)(\\?|$)/i.test(item.imageUrl)
+              ? "video"
+              : "image",
           caption: item.caption?.trim() ?? "",
           sort_order: itemIndex + 1,
           updated_at: new Date().toISOString()

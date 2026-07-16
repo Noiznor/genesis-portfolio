@@ -74,7 +74,7 @@ export function Hero({
             rel="noreferrer"
             className="rounded-xl border border-emerald-400/25 bg-slate-950/70 px-6 py-3 text-sm font-bold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200"
           >
-            View Resume ?
+            View Resume
           </Link>
 
           <Link
@@ -82,7 +82,7 @@ export function Hero({
             download
             className="rounded-xl border border-emerald-400/25 bg-slate-950/70 px-6 py-3 text-sm font-bold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200"
           >
-            Download Resume ?
+            Download Resume
           </Link>
 
           <SmoothScrollLink
