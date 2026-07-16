@@ -34,7 +34,7 @@ export function ResumeCTA({ siteProfile }: ResumeCTAProps) {
             rel="noreferrer"
             className="inline-flex rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:-translate-y-0.5 hover:bg-emerald-300"
           >
-            View Resume ?
+            View Resume
           </Link>
 
           <Link
@@ -42,7 +42,7 @@ export function ResumeCTA({ siteProfile }: ResumeCTAProps) {
             download
             className="inline-flex rounded-xl border border-emerald-400/25 bg-slate-950/70 px-6 py-3 text-sm font-bold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-200"
           >
-            Download Resume ?
+            Download Resume
           </Link>
         </div>
       </div>

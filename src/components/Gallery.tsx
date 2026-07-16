@@ -18,7 +18,7 @@ function mediaLabel(group: GalleryGroup) {
   const imageCount = group.items.length - videoCount;
 
   if (imageCount > 0 && videoCount > 0) {
-    return `${imageCount} photos ? ${videoCount} videos`;
+    return `${imageCount} photos & ${videoCount} videos`;
   }
 
   if (videoCount > 0) {

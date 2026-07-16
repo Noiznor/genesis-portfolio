@@ -2,14 +2,17 @@
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import type { GalleryGroup } from "@/types";
 
 type SaveStatus = "idle" | "saving" | "success" | "error";
+type GalleryMediaType = "image" | "video";
 
 type GalleryItemFormData = {
   id: string;
   imageUrl: string;
   imagePath: string;
+  mediaType: GalleryMediaType;
   caption: string;
 };
 
@@ -19,6 +22,17 @@ type GalleryGroupFormData = {
   description: string;
   items: GalleryItemFormData[];
 };
+
+function createBrowserSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase public environment variables are not configured.");
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
+}
 
 type GalleryAdminEditorProps = {
   galleryGroups: GalleryGroup[];
@@ -34,6 +48,7 @@ function mapGalleryGroupToForm(group: GalleryGroup): GalleryGroupFormData {
       id: item.id,
       imageUrl: item.imageUrl,
       imagePath: item.imagePath ?? "",
+      mediaType: item.mediaType === "video" || /\\.(mp4|webm|mov)(\\?|$)/i.test(item.imageUrl) ? "video" : "image",
       caption: item.caption ?? ""
     }))
   };
@@ -62,6 +77,7 @@ function createGalleryItemDraft(index: number): GalleryItemFormData {
     id: `manual-gallery-image-${Date.now()}-${index}`,
     imageUrl: "",
     imagePath: "",
+    mediaType: "image",
     caption: ""
   };
 }
@@ -216,36 +232,59 @@ export function GalleryAdminEditor({
     if (!group || files.length === 0) return;
 
     setSaveStatus("saving");
-    setStatusMessage(`Uploading ${files.length} gallery media item(s)...`);
+    setStatusMessage(`Uploading ${files.length} gallery media file(s) directly to Supabase...`);
 
     try {
+      const supabase = createBrowserSupabaseClient();
       const uploadedItems: GalleryItemFormData[] = [];
 
       for (const file of files) {
-        const formData = new FormData();
-        formData.append("password", adminPassword);
-        formData.append("groupSlug", group.id || group.title || "gallery");
-        formData.append("file", file);
-
-        const response = await fetch("/api/admin/gallery-images", {
+        const tokenResponse = await fetch("/api/admin/gallery-upload-token", {
           method: "POST",
-          body: formData
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            password: adminPassword,
+            groupSlug: group.id || group.title || "gallery",
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size
+          })
         });
 
-        const result = (await response.json()) as {
-          publicUrl?: string;
+        const tokenResult = (await tokenResponse.json()) as {
           path?: string;
+          token?: string;
+          publicUrl?: string;
+          mediaType?: GalleryMediaType;
           error?: string;
         };
 
-        if (!response.ok || !result.publicUrl || !result.path) {
-          throw new Error(result.error || "Failed to upload gallery image.");
+        if (
+          !tokenResponse.ok ||
+          !tokenResult.path ||
+          !tokenResult.token ||
+          !tokenResult.publicUrl
+        ) {
+          throw new Error(tokenResult.error || "Failed to prepare direct gallery upload.");
+        }
+
+        const { error: uploadError } = await supabase.storage
+          .from("portfolio-gallery")
+          .uploadToSignedUrl(tokenResult.path, tokenResult.token, file, {
+            contentType: file.type
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
         }
 
         uploadedItems.push({
-          id: result.path,
-          imageUrl: result.publicUrl,
-          imagePath: result.path,
+          id: tokenResult.path,
+          imageUrl: tokenResult.publicUrl,
+          imagePath: tokenResult.path,
+          mediaType: tokenResult.mediaType === "video" ? "video" : "image",
           caption: ""
         });
       }
@@ -262,13 +301,13 @@ export function GalleryAdminEditor({
       );
 
       setSaveStatus("success");
-      setStatusMessage("Gallery images uploaded. Click Save Gallery to publish them.");
+      setStatusMessage("Gallery media uploaded directly to Supabase. Click Save Gallery to publish it.");
     } catch (error) {
       setSaveStatus("error");
       setStatusMessage(
         error instanceof Error
           ? error.message
-          : "Unexpected error while uploading gallery images."
+          : "Unexpected error while uploading gallery media."
       );
     } finally {
       event.target.value = "";
